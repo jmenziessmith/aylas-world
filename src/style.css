@@ -6,8 +6,8 @@
 }
 
 * { box-sizing: border-box; }
-html, body, #game { width: 100%; height: 100%; margin: 0; overflow: hidden; }
-body { overscroll-behavior: none; background: #75c8ef; }
+html, body, #game { width: 100%; height: 100%; height: 100dvh; margin: 0; overflow: hidden; }
+body { position: fixed; inset: 0; overscroll-behavior: none; background: #75c8ef; }
 canvas { display: block; width: 100% !important; height: 100% !important; touch-action: none; }
 
 #rotate-message {

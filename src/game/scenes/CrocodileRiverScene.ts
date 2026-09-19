@@ -73,15 +73,11 @@ export class CrocodileRiverScene extends Phaser.Scene {
   }
 
   private createBackground(): void {
-    const imageWidth = 1672;
-    for (let x = 0; x < level.worldWidth + imageWidth; x += imageWidth - 2) {
-      this.add.image(x, 0, 'background')
-        .setOrigin(0)
-        .setDisplaySize(imageWidth, BASE_HEIGHT)
-        .setFlipX(Math.floor(x / (imageWidth - 2)) % 2 === 1)
-        .setScrollFactor(0.18, 1)
-        .setDepth(-30);
-    }
+    this.add.tileSprite(0, 0, level.worldWidth + 1800, BASE_HEIGHT, 'background')
+      .setOrigin(0)
+      .setTileScale(BASE_HEIGHT / 941)
+      .setScrollFactor(0.18, 1)
+      .setDepth(-30);
     this.add.rectangle(level.worldWidth / 2, 350, level.worldWidth, BASE_HEIGHT, 0xeef9ff, 0.13)
       .setScrollFactor(0.35, 1)
       .setDepth(-25);

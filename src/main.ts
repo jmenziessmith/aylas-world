@@ -27,3 +27,16 @@ const game = new Phaser.Game({
 });
 
 window.addEventListener('beforeunload', () => game.destroy(true));
+
+const fullscreenElement = document.documentElement as HTMLElement & {
+  webkitRequestFullscreen?: () => Promise<void>;
+};
+
+const enterMobileFullscreen = (): void => {
+  if (navigator.maxTouchPoints === 0 || !matchMedia('(orientation: landscape)').matches || document.fullscreenElement) return;
+  const request = fullscreenElement.requestFullscreen?.bind(fullscreenElement)
+    ?? fullscreenElement.webkitRequestFullscreen?.bind(fullscreenElement);
+  void request?.({ navigationUI: 'hide' }).catch(() => undefined);
+};
+
+window.addEventListener('pointerdown', enterMobileFullscreen, { capture: true });
