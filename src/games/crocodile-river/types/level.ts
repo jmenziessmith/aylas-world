@@ -1,4 +1,4 @@
-export type LandingKind = 'rock' | 'crocodile';
+export type LandingKind = 'rock' | 'log' | 'crocodile';
 
 export interface LandingTarget {
   id: string;

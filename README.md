@@ -27,7 +27,7 @@ Pushes to `main` build and deploy the game to GitHub Pages through `.github/work
 ## Prototype flow
 
 1. Watch the bicycle-basket clue to remember the next randomly ordered item.
-2. Tap/click reachable rocks or crocodiles to jump across the river.
+2. Tap/click reachable rocks, gently moving logs, or crocodiles to jump across the river.
 3. Safe landings become Ayla's return point; crocodiles bounce her back there.
 4. Reach the far bank and choose an item. Ayla can carry correct or incorrect choices.
 5. Carry it back to the bicycle, where it is placed in the basket and the next clue appears.
@@ -36,7 +36,14 @@ Pushes to `main` build and deploy the game to GitHub Pages through `.github/work
 
 ## Level authoring
 
-The first river is data-driven in `src/game/levels/crocodileRiver.ts`.
+The first river is data-driven in `src/games/crocodile-river/levels/crocodileRiver.ts`.
+
+Games are selected from the home page. Direct development URLs are:
+
+- `/?game=crocodile-river`
+- `/?game=jump-party`
+
+Jump Party's object layout is data-driven in `src/games/jump-party/level.ts`. Motion jump sensitivity and cooldown are exposed in `src/games/jump-party/MotionJumpInput.ts`.
 
 Add/remove/move entries in `targets` to change length and difficulty. The movement code does not know the sequence; any destination inside `maxJumpDistance` is tappable, which also allows non-linear routes.
 

@@ -6,7 +6,7 @@ type Landing = {
   id: string;
   x: number;
   y: number;
-  kind: 'bank' | 'rock' | 'crocodile';
+  kind: 'bank' | 'rock' | 'log' | 'crocodile';
 };
 
 const BASE_HEIGHT = 720;
@@ -36,6 +36,7 @@ export class CrocodileRiverScene extends Phaser.Scene {
   preload(): void {
     this.load.image('ayla', `${ASSETS}/character/ayla.webp`);
     this.load.image('rock', `${ASSETS}/river/rock.webp`);
+    this.load.image('log', `${ASSETS}/river/log.png`);
     this.load.image('crocodile', `${ASSETS}/river/crocodile.webp`);
     this.load.image('water', `${ASSETS}/river/water.webp`);
     this.load.image('start-bank', `${ASSETS}/river/start-bank.webp`);
@@ -104,14 +105,19 @@ export class CrocodileRiverScene extends Phaser.Scene {
   }
 
   private createTargets(): void {
-    level.targets.forEach((target) => {
+    level.targets.forEach((authoredTarget) => {
+      const target = {
+        ...authoredTarget,
+        x: authoredTarget.x + Phaser.Math.Between(-20, 20),
+        y: authoredTarget.y + Phaser.Math.Between(-24, 24)
+      };
       this.add.ellipse(target.x, target.y + 22, 130, 34, 0x174d63, 0.18).setDepth(4);
       const sprite = this.add.image(target.x, target.y, target.kind)
         .setScale(target.scale ?? 0.22)
-        .setDepth(target.kind === 'rock' ? 7 : 6);
+        .setDepth(target.kind === 'crocodile' ? 6 : 7);
       this.targetSprites.set(target.id, sprite);
-      const landingY = target.y - (target.kind === 'rock' ? 58 : 38);
-      this.makeInteractive(sprite, { ...target, y: landingY });
+      const landingOffset = target.kind === 'rock' ? 58 : target.kind === 'log' ? 48 : 38;
+      this.makeInteractive(sprite, () => ({ ...target, x: sprite.x, y: sprite.y - landingOffset }));
 
       if (target.kind === 'crocodile') {
         this.tweens.add({
@@ -120,6 +126,17 @@ export class CrocodileRiverScene extends Phaser.Scene {
           y: target.y + 6,
           angle: 2.5,
           duration: 1700 + Math.random() * 400,
+          yoyo: true,
+          repeat: -1,
+          ease: 'Sine.InOut'
+        });
+      } else if (target.kind === 'log') {
+        this.tweens.add({
+          targets: sprite,
+          x: target.x + 18,
+          y: target.y + 7,
+          angle: 2,
+          duration: 1250 + Math.random() * 350,
           yoyo: true,
           repeat: -1,
           ease: 'Sine.InOut'
@@ -195,9 +212,11 @@ export class CrocodileRiverScene extends Phaser.Scene {
     });
   }
 
-  private makeInteractive(object: Phaser.GameObjects.GameObject, destination: Landing): void {
+  private makeInteractive(object: Phaser.GameObjects.GameObject, destination: Landing | (() => Landing)): void {
     object.setInteractive({ cursor: 'pointer' });
-    object.on(Phaser.Input.Events.POINTER_DOWN, () => this.tryJump(destination));
+    object.on(Phaser.Input.Events.POINTER_DOWN, () => {
+      this.tryJump(typeof destination === 'function' ? destination() : destination);
+    });
   }
 
   private tryJump(destination: Landing): void {
@@ -328,7 +347,12 @@ export class CrocodileRiverScene extends Phaser.Scene {
     }).setOrigin(0.5).setDepth(102);
     button.on(Phaser.Input.Events.POINTER_DOWN, () => this.scene.restart());
 
-    this.tweens.add({ targets: [card, title, star, button, buttonText], scale: { from: 0.8, to: 1 }, duration: 420, ease: 'Back.Out' });
+    const home = this.add.text(centerX, centerY + 228, 'Back to games', {
+      fontFamily: 'ui-rounded, system-ui, sans-serif', fontSize: '22px', color: '#356878', fontStyle: 'bold'
+    }).setOrigin(0.5).setDepth(102).setInteractive({ cursor: 'pointer' });
+    home.on(Phaser.Input.Events.POINTER_DOWN, () => { window.location.href = import.meta.env.BASE_URL; });
+
+    this.tweens.add({ targets: [card, title, star, button, buttonText, home], scale: { from: 0.8, to: 1 }, duration: 420, ease: 'Back.Out' });
     this.tweens.add({ targets: star, angle: 360, duration: 2200, repeat: -1, ease: 'Linear' });
   }
 

@@ -10,6 +10,44 @@ html, body, #game { width: 100%; height: 100%; height: 100dvh; margin: 0; overfl
 body { position: fixed; inset: 0; overscroll-behavior: none; background: #75c8ef; }
 canvas { display: block; width: 100% !important; height: 100% !important; touch-action: none; }
 
+#fullscreen-toggle {
+  display: none;
+  position: fixed;
+  top: max(12px, env(safe-area-inset-top));
+  right: max(12px, env(safe-area-inset-right));
+  z-index: 30;
+  width: 48px;
+  height: 48px;
+  padding: 0;
+  place-items: center;
+  border: 3px solid rgba(255,255,255,.9);
+  border-radius: 14px;
+  background: rgba(24,73,91,.58);
+  color: white;
+  box-shadow: 0 4px 14px rgba(13,48,63,.25);
+  font: 700 27px/1 system-ui, sans-serif;
+  touch-action: manipulation;
+}
+
+@media (orientation: landscape) and (pointer: coarse) {
+  .playing #fullscreen-toggle { display: grid; }
+}
+
+#launcher { width: 100%; height: 100dvh; display: grid; place-items: center; overflow: auto; padding: 28px; background: linear-gradient(180deg, #78d3f5 0%, #d7f6d2 64%, #77c873 100%); touch-action: manipulation; }
+#launcher[hidden] { display: none; }
+.launcher-card { width: min(980px, 96vw); text-align: center; }
+.eyebrow { margin: 0; color: #2d7087; font-size: clamp(18px, 3vw, 26px); font-weight: 800; }
+h1 { margin: 0 0 2px; color: #943c78; font-size: clamp(48px, 8vw, 86px); line-height: 1; text-shadow: 0 5px #fff7; }
+.choose { margin: 12px 0 22px; color: #275568; font-size: clamp(21px, 3vw, 30px); font-weight: 800; }
+.game-grid { display: grid; grid-template-columns: repeat(2, minmax(250px, 1fr)); gap: clamp(18px, 4vw, 38px); }
+.game-choice { min-height: 245px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; padding: 22px; border: 7px solid #fff; border-radius: 36px; color: #173f50; text-decoration: none; box-shadow: 0 13px 0 #36758f55, 0 20px 45px #27536944; transition: transform .15s; }
+.game-choice:active { transform: translateY(7px); box-shadow: 0 6px 0 #36758f55; }
+.river-choice { background: linear-gradient(145deg, #91e0f7, #d7f6ff); }
+.party-choice { background: linear-gradient(145deg, #ffd0e2, #fff1a9); }
+.game-icon { font-size: 76px; line-height: 1; }
+.game-choice strong { font-size: clamp(28px, 4vw, 40px); }
+.game-choice small { max-width: 310px; font-size: clamp(16px, 2vw, 21px); font-weight: 650; }
+
 #rotate-message {
   display: none;
   position: fixed;
@@ -31,6 +69,8 @@ canvas { display: block; width: 100% !important; height: 100% !important; touch-
 }
 
 @media (orientation: portrait) {
-  #rotate-message { display: flex; }
-  #game { visibility: hidden; }
+  .playing #rotate-message { display: flex; }
+  .playing #game { visibility: hidden; }
+  .game-grid { grid-template-columns: 1fr; }
+  .game-choice { min-height: 190px; }
 }

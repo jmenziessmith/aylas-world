@@ -4,13 +4,27 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no" />
     <meta name="theme-color" content="#7ccff4" />
-    <title>Ayla's World — Crocodile River</title>
+    <title>Ayla's World</title>
   </head>
   <body>
+    <main id="launcher">
+      <section class="launcher-card">
+        <p class="eyebrow">Welcome to</p>
+        <h1>Ayla’s World</h1>
+        <p class="choose">Choose a game</p>
+        <nav class="game-grid" aria-label="Games">
+          <a class="game-choice river-choice" href="?game=crocodile-river">
+            <span class="game-icon">🐊</span><strong>Crocodile River</strong><small>Jump across and bring the toys home</small>
+          </a>
+          <a class="game-choice party-choice" href="?game=jump-party">
+            <span class="game-icon">🎈</span><strong>Jump Party</strong><small>Jump, splash and pop balloons</small>
+          </a>
+        </nav>
+      </section>
+    </main>
     <main id="game"></main>
-    <div id="rotate-message" aria-hidden="true">
-      <div class="rotate-card">↻</div>
-    </div>
+    <button id="fullscreen-toggle" type="button" aria-label="Toggle full screen">⛶</button>
+    <div id="rotate-message" aria-hidden="true"><div class="rotate-card">↻</div></div>
     <script type="module" src="/src/main.ts"></script>
   </body>
 </html>
