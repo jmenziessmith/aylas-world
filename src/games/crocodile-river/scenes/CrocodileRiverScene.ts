@@ -10,7 +10,6 @@ type Landing = {
 };
 
 const BASE_HEIGHT = 720;
-const WATER_TOP = 280;
 const BACKGROUND_WIDTH = 2172;
 const BACKGROUND_HEIGHT = 724;
 const ASSETS = `${import.meta.env.BASE_URL}assets`;
@@ -19,7 +18,8 @@ export class CrocodileRiverScene extends Phaser.Scene {
   private player!: Phaser.GameObjects.Container;
   private ayla!: Phaser.GameObjects.Image;
   private background!: Phaser.GameObjects.Image;
-  private water!: Phaser.GameObjects.TileSprite;
+  private backgroundTravel = 0;
+  private cameraTravel = 1;
   private current: Landing = { id: 'start', ...level.start, kind: 'bank' };
   private previousSafe: Landing = this.current;
   private moving = false;
@@ -42,7 +42,6 @@ export class CrocodileRiverScene extends Phaser.Scene {
     this.load.image('rock', `${ASSETS}/river/rock.webp`);
     this.load.image('log', `${ASSETS}/river/log.png`);
     this.load.image('crocodile', `${ASSETS}/river/crocodile.webp`);
-    this.load.image('water', `${ASSETS}/river/water.webp`);
     this.load.image('start-bank', `${ASSETS}/river/start-bank.webp`);
     this.load.image('far-bank', `${ASSETS}/river/far-bank.webp`);
     this.load.image('background', `${ASSETS}/background/river-panorama.png`);
@@ -58,7 +57,6 @@ export class CrocodileRiverScene extends Phaser.Scene {
     this.input.mouse?.disableContextMenu();
     this.cameras.main.setBackgroundColor('#89d6f5').setBounds(0, 0, level.worldWidth, BASE_HEIGHT);
     this.createBackground();
-    this.createRiver();
     this.createBanks();
     this.createTargets();
     this.createItems();
@@ -74,8 +72,9 @@ export class CrocodileRiverScene extends Phaser.Scene {
     this.showBriefing();
   }
 
-  update(_time: number, delta: number): void {
-    this.water.tilePositionX += delta * 0.012;
+  update(): void {
+    const progress = Phaser.Math.Clamp(this.cameras.main.scrollX / this.cameraTravel, 0, 1);
+    this.background.x = -this.backgroundTravel * progress;
     const safeLog = this.movingLogs.get(this.previousSafe.id);
     if (safeLog) {
       this.previousSafe.x = safeLog.sprite.x;
@@ -92,17 +91,8 @@ export class CrocodileRiverScene extends Phaser.Scene {
   private createBackground(): void {
     this.background = this.add.image(0, BASE_HEIGHT / 2, 'background')
       .setOrigin(0, 0.5)
+      .setScrollFactor(0)
       .setDepth(-30);
-    this.add.rectangle(level.worldWidth / 2, 350, level.worldWidth, BASE_HEIGHT, 0xeef9ff, 0.13)
-      .setScrollFactor(0.35, 1)
-      .setDepth(-25);
-  }
-
-  private createRiver(): void {
-    this.water = this.add.tileSprite(level.worldWidth / 2, WATER_TOP, level.worldWidth, BASE_HEIGHT - WATER_TOP, 'water')
-      .setOrigin(0.5, 0)
-      .setTileScale(0.72)
-      .setDepth(-10);
   }
 
   private createBanks(): void {
@@ -464,8 +454,8 @@ export class CrocodileRiverScene extends Phaser.Scene {
     camera.setDeadzone(Math.min(220, visibleWorldWidth * 0.18), 220);
 
     const backgroundScale = Math.max(BASE_HEIGHT / BACKGROUND_HEIGHT, visibleWorldWidth / BACKGROUND_WIDTH);
-    const backgroundTravel = Math.max(0, BACKGROUND_WIDTH * backgroundScale - visibleWorldWidth);
-    const cameraTravel = Math.max(1, level.worldWidth - visibleWorldWidth);
-    this.background.setScale(backgroundScale).setScrollFactor(backgroundTravel / cameraTravel, 0);
+    this.backgroundTravel = Math.max(0, BACKGROUND_WIDTH * backgroundScale - visibleWorldWidth);
+    this.cameraTravel = Math.max(1, level.worldWidth - visibleWorldWidth);
+    this.background.setScale(backgroundScale);
   }
 }
