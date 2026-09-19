@@ -50,6 +50,7 @@ Add/remove/move entries in `targets` to change length and difficulty. The moveme
 ## Assets
 
 Game art lives under `public/assets/`. The current prototype uses generated storybook assets as independent sprites rather than a baked level screenshot.
+The river panorama is scaled uniformly to cover the viewport and pans from its left edge to its right edge across the crossing; it is never stretched or repeated.
 
 ## Codex / Superpowers
 

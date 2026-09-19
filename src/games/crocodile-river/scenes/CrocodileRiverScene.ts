@@ -11,11 +11,14 @@ type Landing = {
 
 const BASE_HEIGHT = 720;
 const WATER_TOP = 280;
+const BACKGROUND_WIDTH = 2172;
+const BACKGROUND_HEIGHT = 724;
 const ASSETS = `${import.meta.env.BASE_URL}assets`;
 
 export class CrocodileRiverScene extends Phaser.Scene {
   private player!: Phaser.GameObjects.Container;
   private ayla!: Phaser.GameObjects.Image;
+  private background!: Phaser.GameObjects.Image;
   private water!: Phaser.GameObjects.TileSprite;
   private current: Landing = { id: 'start', ...level.start, kind: 'bank' };
   private previousSafe: Landing = this.current;
@@ -42,7 +45,7 @@ export class CrocodileRiverScene extends Phaser.Scene {
     this.load.image('water', `${ASSETS}/river/water.webp`);
     this.load.image('start-bank', `${ASSETS}/river/start-bank.webp`);
     this.load.image('far-bank', `${ASSETS}/river/far-bank.webp`);
-    this.load.image('background', `${ASSETS}/background/river-valley.webp`);
+    this.load.image('background', `${ASSETS}/background/river-panorama.png`);
     this.load.image('bicycle', `${ASSETS}/props/bicycle.webp`);
     this.load.image('teddy', `${ASSETS}/props/teddy.webp`);
     this.load.image('ball', `${ASSETS}/props/ball.webp`);
@@ -87,10 +90,8 @@ export class CrocodileRiverScene extends Phaser.Scene {
   }
 
   private createBackground(): void {
-    this.add.tileSprite(0, 0, level.worldWidth + 1800, BASE_HEIGHT, 'background')
-      .setOrigin(0)
-      .setTileScale(BASE_HEIGHT / 941)
-      .setScrollFactor(0.18, 1)
+    this.background = this.add.image(0, BASE_HEIGHT / 2, 'background')
+      .setOrigin(0, 0.5)
       .setDepth(-30);
     this.add.rectangle(level.worldWidth / 2, 350, level.worldWidth, BASE_HEIGHT, 0xeef9ff, 0.13)
       .setScrollFactor(0.35, 1)
@@ -458,7 +459,13 @@ export class CrocodileRiverScene extends Phaser.Scene {
   private resize(gameSize: Phaser.Structs.Size): void {
     const camera = this.cameras.main;
     const zoom = gameSize.height / BASE_HEIGHT;
+    const visibleWorldWidth = gameSize.width / zoom;
     camera.setViewport(0, 0, gameSize.width, gameSize.height).setZoom(zoom);
-    camera.setDeadzone(Math.min(220, (gameSize.width / zoom) * 0.18), 220);
+    camera.setDeadzone(Math.min(220, visibleWorldWidth * 0.18), 220);
+
+    const backgroundScale = Math.max(BASE_HEIGHT / BACKGROUND_HEIGHT, visibleWorldWidth / BACKGROUND_WIDTH);
+    const backgroundTravel = Math.max(0, BACKGROUND_WIDTH * backgroundScale - visibleWorldWidth);
+    const cameraTravel = Math.max(1, level.worldWidth - visibleWorldWidth);
+    this.background.setScale(backgroundScale).setScrollFactor(backgroundTravel / cameraTravel, 0);
   }
 }
