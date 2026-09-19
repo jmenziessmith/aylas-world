@@ -42,7 +42,8 @@ export function createRound(level: number, previous?: Mode, forcedMode?: Mode): 
   };
   if (mode === 'number') {
     const answers = shuffled([count, ...shuffled(Array.from({ length: max }, (_, index) => index + 1).filter(n => n !== count)).slice(0, 2)]);
-    return { mode, title: 'Number Lagoon', prompt: `Which group has ${count}?`, objects: [], choices: answers.map(n => ({ objects: repeat(kind, n), answer: n === count })) };
+    const numberKind = pick(['teal-shell', 'purple-spiral', 'pearl', 'star'] as ObjectKind[]);
+    return { mode, title: 'Number Lagoon', prompt: `Which group has ${count}?`, objects: [], choices: answers.map(n => ({ objects: repeat(numberKind, n), answer: n === count })) };
   }
   if (mode === 'pattern') {
     const a = pick(simpleKinds); const b = pick(simpleKinds.filter(value => value !== a));
