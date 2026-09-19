@@ -4,9 +4,9 @@ import { MotionJumpInput } from './MotionJumpInput';
 
 const BASE_HEIGHT = 720;
 const ASSETS = `${import.meta.env.BASE_URL}assets/jump-party`;
-const NORMAL_JUMP_SPEED = 820;
-const POWERED_JUMP_SPEED = 1080;
-const GRAVITY = 2600;
+const NORMAL_JUMP_SPEED = 1000;
+const POWERED_JUMP_SPEED = 1550;
+const GRAVITY = 4000;
 const MOVE_SPEED = 360;
 
 export class JumpPartyScene extends Phaser.Scene {
@@ -158,9 +158,9 @@ export class JumpPartyScene extends Phaser.Scene {
 
   private createHud(): void {
     this.jumpLabel = this.add.image(465, 58, 'hud-jumps').setDisplaySize(300, 100).setScrollFactor(0).setDepth(100);
-    this.jumpText = this.add.text(550, 78, `0 / ${JUMP_TARGET}`, this.counterStyle()).setOrigin(0.5).setScrollFactor(0).setDepth(101);
+    this.jumpText = this.add.text(390, 60, `0 / ${JUMP_TARGET}`, this.counterStyle()).setOrigin(0.5).setScrollFactor(0).setDepth(101);
     this.balloonLabel = this.add.image(815, 58, 'hud-balloons').setDisplaySize(300, 100).setScrollFactor(0).setDepth(100);
-    this.balloonText = this.add.text(900, 78, `0 / ${BALLOON_TARGET}`, this.counterStyle()).setOrigin(0.5).setScrollFactor(0).setDepth(101);
+    this.balloonText = this.add.text(740, 60, `0 / ${BALLOON_TARGET}`, this.counterStyle()).setOrigin(0.5).setScrollFactor(0).setDepth(101);
     this.powerText = this.add.text(640, 112, '', { fontFamily: 'ui-rounded, system-ui', fontSize: '28px', color: '#7b287d', fontStyle: 'bold', stroke: '#ffffff', strokeThickness: 6 }).setOrigin(0.5).setScrollFactor(0).setDepth(101);
     this.cheerText = this.add.text(640, 158, 'Let’s jump!', { fontFamily: 'ui-rounded, system-ui', fontSize: '30px', color: '#7b287d', fontStyle: 'bold', stroke: '#ffffff', strokeThickness: 7 }).setOrigin(0.5).setScrollFactor(0).setDepth(101);
     this.tweens.add({ targets: this.cheerText, scale: 1.08, duration: 650, yoyo: true, repeat: 1, ease: 'Sine.InOut' });
@@ -418,9 +418,9 @@ export class JumpPartyScene extends Phaser.Scene {
 
     const centerX = visibleWidth / 2;
     this.jumpLabel?.setX(centerX - 175);
-    this.jumpText?.setX(centerX - 90);
+    this.jumpText?.setX(centerX - 250);
     this.balloonLabel?.setX(centerX + 175);
-    this.balloonText?.setX(centerX + 260);
+    this.balloonText?.setX(centerX + 100);
     this.powerText?.setX(centerX);
     this.cheerText?.setX(centerX);
     this.tapHint?.setX(centerX);
