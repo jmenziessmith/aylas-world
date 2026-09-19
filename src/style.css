@@ -66,11 +66,12 @@ canvas { display: block; touch-action: none; }
 .eyebrow { margin: 0; color: #2d7087; font-size: clamp(18px, 3vw, 26px); font-weight: 800; }
 h1 { margin: 0 0 2px; color: #943c78; font-size: clamp(48px, 8vw, 86px); line-height: 1; text-shadow: 0 5px #fff7; }
 .choose { margin: 12px 0 22px; color: #275568; font-size: clamp(21px, 3vw, 30px); font-weight: 800; }
-.game-grid { display: grid; grid-template-columns: repeat(2, minmax(250px, 1fr)); gap: clamp(18px, 4vw, 38px); }
+.game-grid { display: grid; grid-template-columns: repeat(3, minmax(230px, 1fr)); gap: clamp(14px, 3vw, 28px); }
 .game-choice { min-height: 245px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; padding: 22px; border: 7px solid #fff; border-radius: 36px; color: #173f50; text-decoration: none; box-shadow: 0 13px 0 #36758f55, 0 20px 45px #27536944; transition: transform .15s; }
 .game-choice:active { transform: translateY(7px); box-shadow: 0 6px 0 #36758f55; }
 .river-choice { background: linear-gradient(145deg, #91e0f7, #d7f6ff); }
 .party-choice { background: linear-gradient(145deg, #ffd0e2, #fff1a9); }
+.mermaid-choice { background: linear-gradient(145deg, #b7f5ef, #ead4ff); }
 .game-icon { font-size: 76px; line-height: 1; }
 .game-choice strong { font-size: clamp(28px, 4vw, 40px); }
 .game-choice small { max-width: 310px; font-size: clamp(16px, 2vw, 21px); font-weight: 650; }
@@ -114,4 +115,10 @@ h1 { margin: 0 0 2px; color: #943c78; font-size: clamp(48px, 8vw, 86px); line-he
   .playing #game { visibility: hidden; }
   .game-grid { grid-template-columns: 1fr; }
   .game-choice { min-height: 190px; }
+}
+
+@media (max-width: 900px) and (orientation: landscape) {
+  #launcher { padding: 14px; }
+  .game-choice { min-height: 205px; padding: 14px; border-radius: 28px; }
+  .game-icon { font-size: 58px; }
 }

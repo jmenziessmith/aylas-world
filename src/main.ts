@@ -2,9 +2,10 @@ import Phaser from 'phaser';
 import './style.css';
 import { CrocodileRiverScene } from './games/crocodile-river/scenes/CrocodileRiverScene';
 import { JumpPartyScene } from './games/jump-party/JumpPartyScene';
+import { MermaidGameScene } from './games/mermaid/MermaidGameScene';
 
 const selectedGame = new URLSearchParams(window.location.search).get('game');
-const scene = selectedGame === 'jump-party' ? JumpPartyScene : selectedGame === 'crocodile-river' ? CrocodileRiverScene : undefined;
+const scene = selectedGame === 'jump-party' ? JumpPartyScene : selectedGame === 'crocodile-river' ? CrocodileRiverScene : selectedGame === 'mermaid' ? MermaidGameScene : undefined;
 let game: Phaser.Game | undefined;
 
 const syncVisualViewport = (): void => {
