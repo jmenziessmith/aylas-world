@@ -36,6 +36,21 @@ canvas { display: block; touch-action: none; }
 .permission-actions button { border: 0; border-radius: 15px; padding: 12px 19px; background: #66c88a; color: #183e3a; font: inherit; font-size: 18px; font-weight: 800; }
 .permission-actions button:last-child { background: #d9edf2; }
 #fullscreen-toggle[hidden] { display: none !important; }
+#game-home[hidden] { display: none !important; }
+
+#game-home {
+  position: fixed;
+  top: max(12px, env(safe-area-inset-top));
+  left: max(12px, env(safe-area-inset-left));
+  z-index: 200;
+  width: 66px;
+  height: 66px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  touch-action: manipulation;
+}
+#game-home img { display: block; width: 100%; height: 100%; }
 
 #fullscreen-toggle {
   display: none;
@@ -135,4 +150,5 @@ h1 { margin: 0 0 2px; color: #943c78; font-size: clamp(48px, 8vw, 86px); line-he
   .game-icon { font-size: clamp(36px, 10vh, 52px); }
   .game-choice strong { font-size: clamp(17px, 3.5vw, 25px); }
   .game-choice small { font-size: clamp(11px, 2vw, 15px); }
+  #game-home { width: 58px; height: 58px; }
 }

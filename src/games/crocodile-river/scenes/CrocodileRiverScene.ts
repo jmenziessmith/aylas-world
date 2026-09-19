@@ -25,7 +25,6 @@ export class CrocodileRiverScene extends Phaser.Scene {
   private missionIndex = 0;
   private carriedItem?: Phaser.GameObjects.Image;
   private carriedItemId?: string;
-  private gamesButton!: Phaser.GameObjects.Text;
   private missionOrder: RetrievalItem[] = [];
   private targetSprites = new Map<string, Phaser.GameObjects.Image>();
   private movingLogs = new Map<string, { sprite: Phaser.GameObjects.Image; landingOffset: number }>();
@@ -60,7 +59,6 @@ export class CrocodileRiverScene extends Phaser.Scene {
     this.createTargets();
     this.createItems();
     this.createPlayer();
-    this.createMenuButton();
 
     this.cameras.main.startFollow(this.player, true, 0.09, 0.09);
     this.scale.on(Phaser.Scale.Events.RESIZE, this.resize, this);
@@ -210,17 +208,6 @@ export class CrocodileRiverScene extends Phaser.Scene {
     this.startIdle();
   }
 
-  private createMenuButton(): void {
-    this.gamesButton = this.add.text(1170, 42, '‹ Games', {
-      fontFamily: 'ui-rounded, system-ui, sans-serif',
-      fontSize: '24px',
-      color: '#24495b',
-      fontStyle: 'bold',
-      backgroundColor: '#ffffffdd',
-      padding: { x: 15, y: 10 }
-    }).setOrigin(0.5).setScrollFactor(0).setDepth(90).setInteractive({ cursor: 'pointer' });
-    this.gamesButton.on(Phaser.Input.Events.POINTER_DOWN, () => { window.location.href = import.meta.env.BASE_URL; });
-  }
 
   private showBriefing(): void {
     this.briefing = true;
@@ -484,7 +471,6 @@ export class CrocodileRiverScene extends Phaser.Scene {
     const visibleWorldWidth = gameSize.width / zoom;
     camera.setViewport(0, 0, gameSize.width, gameSize.height).setZoom(zoom);
     camera.setDeadzone(Math.min(220, visibleWorldWidth * 0.18), 220);
-    this.gamesButton?.setX(visibleWorldWidth - 110);
 
     this.cameraTravel = Math.max(1, level.worldWidth - visibleWorldWidth);
   }

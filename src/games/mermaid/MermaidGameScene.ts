@@ -35,7 +35,8 @@ export class MermaidGameScene extends Phaser.Scene {
   private visibleWidth = W; private layoutOffset = 0; private chapterIndex = 0; private chapterStep = 0;
   private chapterJewels: ObjectKind[] = [];
   private debugModeActive = false; private soundEnabled = true; private speechUnlocked = false; private lastEdgeTap = 0;
-  private gamesSinceBridge = 0; private nextBridgeAt = 3;
+  private modesSinceBridge = 0; private nextBridgeAt = 3; private bridgePromptOrder: string[] = [];
+  private speechTimer?: number;
   private readonly chapters: Mode[] = ['match', 'count', 'pattern', 'add', 'sort', 'compare', 'subtract', 'number'];
 
   constructor() { super('mermaid-game'); }
@@ -53,15 +54,15 @@ export class MermaidGameScene extends Phaser.Scene {
   }
   create(): void {
     document.querySelector('#game-loader')?.setAttribute('hidden', ''); this.loadProgress();
-    this.nextBridgeAt = Phaser.Math.Between(2, 3);
+    this.nextBridgeAt = Phaser.Math.Between(2, 3); this.bridgePromptOrder = Phaser.Utils.Array.Shuffle([...worldBridgePrompts]);
     const bgSource = this.textures.get('mermaid-bg').getSourceImage() as HTMLImageElement;
     const bg = this.add.image(W / 2, 0, 'mermaid-bg').setOrigin(.5, 0).setScale(H / bgSource.height).setDepth(-10).setName('mermaid-background');
     this.add.rectangle(W / 2, H / 2, 2400, H, 0x073e66, .06).setDepth(-9).setName('mermaid-wash');
     this.makeTopBar(); this.makeHost(); this.makeNecklace(); this.content = this.add.container(0, 0);
     const needsSpeechGesture = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
     this.speechUnlocked = !needsSpeechGesture;
-    if (needsSpeechGesture) this.game.canvas.addEventListener('pointerdown', () => { this.speechUnlocked = true; this.speak(this.worldBridge ? this.prompt.text : this.round?.prompt ?? 'Welcome to Mermaid Magic!'); }, { once: true, capture: true });
-    this.scale.on(Phaser.Scale.Events.RESIZE, this.resize, this); this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => speechSynthesis?.cancel());
+    if (needsSpeechGesture) this.game.canvas.addEventListener('pointerdown', () => { this.speechUnlocked = true; this.speak(this.worldBridge ? this.prompt.text : this.round?.prompt ?? 'Welcome to Mermaid Magic!', true); }, { once: true, capture: true });
+    this.scale.on(Phaser.Scale.Events.RESIZE, this.resize, this); this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => { if (this.speechTimer !== undefined) window.clearTimeout(this.speechTimer); speechSynthesis?.cancel(); });
     if (import.meta.env.DEV) {
       const params = new URLSearchParams(window.location.search); const debugMode = params.get('mode') as Mode | null;
       if (debugMode && this.chapters.includes(debugMode)) { this.chapterIndex = this.chapters.indexOf(debugMode); this.debugModeActive = true; }
@@ -85,7 +86,7 @@ export class MermaidGameScene extends Phaser.Scene {
     const panel = this.add.image(480, 51, 'title-banner').setDisplaySize(450, 105).setDepth(50).setName('top-panel');
     this.title = this.add.text(480, 55, 'Mermaid Magic', this.textStyle(29, '#234b74')).setOrigin(.5).setDepth(51);
     const home = this.artButton(48, 52, 'home-button', () => { window.location.href = import.meta.env.BASE_URL; }); home.setDepth(60).setName('home-control');
-    this.audioButton = this.artButton(912, 52, 'audio-button', () => { this.soundEnabled = !this.soundEnabled; this.audioButton.setAlpha(this.soundEnabled ? 1 : .5); if (!this.soundEnabled) window.speechSynthesis?.cancel(); else this.speak(this.worldBridge ? this.prompt.text : this.round?.prompt ?? 'Sound is on!'); }); this.audioButton.setDepth(60).setName('audio-control');
+    this.audioButton = this.artButton(912, 52, 'audio-button', () => { this.soundEnabled = !this.soundEnabled; this.audioButton.setAlpha(this.soundEnabled ? 1 : .5); if (!this.soundEnabled) window.speechSynthesis?.cancel(); else this.speak(this.worldBridge ? this.prompt.text : this.round?.prompt ?? 'Sound is on!', true); }); this.audioButton.setDepth(60).setName('audio-control');
     panel.setScrollFactor(0); this.title.setScrollFactor(0);
   }
   private artButton(x: number, y: number, key: string, callback: () => void): Phaser.GameObjects.Image {
@@ -107,12 +108,12 @@ export class MermaidGameScene extends Phaser.Scene {
     shown.forEach((kind, index) => { const row = Math.floor(index / 2); const col = index % 2; this.necklace.add(this.objectImage((col - .5) * 42, -105 + row * 105, kind, 34).setDepth(2)); });
   }
   private nextRound(): void {
-    this.busy = false; this.worldBridge = !this.debugModeActive && this.gamesSinceBridge >= this.nextBridgeAt;
+    this.busy = false; this.worldBridge = !this.debugModeActive && this.chapterStep === 0 && this.modesSinceBridge >= this.nextBridgeAt;
     if (this.worldBridge) { this.showWorldBridge(); return; }
     const chapterMode = this.chapters[this.chapterIndex % this.chapters.length];
     this.round = createRound(this.level(), this.lastMode, chapterMode); this.lastMode = this.round.mode; this.selectedSort.clear(); this.renderRound(this.round);
   }
-  private skipMode(): void { this.time.removeAllEvents(); window.speechSynthesis?.cancel(); const skippingBridge = this.worldBridge; this.busy = false; this.worldBridge = false; if (skippingBridge) { this.gamesSinceBridge = 0; this.nextBridgeAt = Phaser.Math.Between(2, 3); } this.chapterIndex = (this.chapterIndex + 1) % this.chapters.length; this.chapterStep = 0; this.chapterJewels = []; const mode = this.chapters[this.chapterIndex]; this.round = createRound(this.level(), this.lastMode, mode); this.lastMode = mode; this.selectedSort.clear(); this.renderRound(this.round); }
+  private skipMode(): void { this.time.removeAllEvents(); window.speechSynthesis?.cancel(); const skippingBridge = this.worldBridge; this.busy = false; this.worldBridge = false; if (skippingBridge) this.resetBridgeCadence(); this.chapterIndex = (this.chapterIndex + 1) % this.chapters.length; this.chapterStep = 0; this.chapterJewels = []; const mode = this.chapters[this.chapterIndex]; this.round = createRound(this.level(), this.lastMode, mode); this.lastMode = mode; this.selectedSort.clear(); this.renderRound(this.round); }
   private level(): number { return Math.max(0, Math.min(10, Math.floor(this.progress.wins / 2) - Math.floor((this.progress.attempts - this.progress.wins) / 3))); }
   private renderRound(round: Round): void {
     this.content.removeAll(true); this.necklace.setVisible(false); this.title.setText(round.mode === 'match' ? 'Necklace' : round.title); this.prompt.setText(round.mode === 'match' ? 'Match this shape for the necklace!' : round.prompt); this.setMermaid('mermaid-present'); this.speak(round.mode === 'match' ? 'Match this shape for the necklace!' : round.prompt);
@@ -209,11 +210,11 @@ export class MermaidGameScene extends Phaser.Scene {
     });
   }
   private showWorldBridge(): void {
-    this.content.removeAll(true); this.necklace.setVisible(false); this.title.setText('In Your World'); this.setMermaid('mermaid-happy'); const challenge = worldBridgePrompts[Math.floor(Math.random() * worldBridgePrompts.length)]; this.prompt.setText(challenge); this.speak(`Let’s try this in your world! ${challenge}`);
+    this.content.removeAll(true); this.necklace.setVisible(false); this.title.setText('In Your World'); this.setMermaid('mermaid-happy'); if (!this.bridgePromptOrder.length) this.bridgePromptOrder = Phaser.Utils.Array.Shuffle([...worldBridgePrompts]); const challenge = this.bridgePromptOrder.pop()!; this.prompt.setText(challenge); this.speak(`Let’s try this in your world! ${challenge}`);
     const card = this.add.image(480, 370, 'message-panel').setDisplaySize(660, 340); this.content.add(card);
     this.content.add(this.add.text(480, 285, '🌍  ✨  🐚', this.textStyle(52, '#664c83')).setOrigin(.5)); this.content.add(this.add.text(480, 385, challenge, { ...this.textStyle(37, '#284967'), align: 'center', wordWrap: { width: 560 } }).setOrigin(.5));
     this.content.add(this.add.image(480, 610, 'answer-tray').setDisplaySize(590, 145));
-    const button = this.choiceCard(480, 610, 350, 104, () => { if (this.busy) return; this.busy = true; this.gamesSinceBridge = 0; this.nextBridgeAt = Phaser.Math.Between(2, 3); this.progress.charms.push('gem'); this.saveProgress(); this.refreshNecklace(); this.celebrate('A rainbow gem!'); });
+    const button = this.choiceCard(480, 610, 350, 104, () => { if (this.busy) return; this.busy = true; this.resetBridgeCadence(); this.progress.charms.push('gem'); this.saveProgress(); this.refreshNecklace(); this.celebrate('A rainbow gem!'); });
     button.add(this.add.text(0, 0, 'I DID IT!  ★', this.textStyle(34, '#6b3f76')).setOrigin(.5));
   }
   private choiceCard(x: number, y: number, width: number, height: number, callback: () => void): Phaser.GameObjects.Container {
@@ -222,8 +223,9 @@ export class MermaidGameScene extends Phaser.Scene {
   }
   private addNecklacePendant(jewel: ObjectKind, index: number): void { const slot = NECKLACE_SLOTS[index]; if (!slot) return; const width = jewel === 'star' ? 126 : jewel === 'gem' ? 122 : 118; this.content.add(this.add.image(slot.x, slot.y, CHARM[jewel]).setOrigin(.5, 0).setDisplaySize(width, 128)); }
   private choose(choice: Choice, card: Phaser.GameObjects.Container): void { if (choice.answer) { if (this.round?.mode === 'match' && this.round.target) { const index = this.chapterJewels.length; this.chapterJewels.push(this.round.target); this.addNecklacePendant(this.round.target, index); } this.correct(); } else this.wrong(card); }
-  private correct(): void { if (this.busy) return; this.busy = true; this.progress.wins++; this.progress.attempts++; this.gamesSinceBridge++; const rewards: ObjectKind[] = ['pearl', 'pink-shell', 'star', 'gem', 'teal-spiral']; const reward = rewards[this.progress.wins % rewards.length]; this.progress.charms.push(reward); this.chapterStep++;
+  private correct(): void { if (this.busy) return; this.busy = true; this.progress.wins++; this.progress.attempts++; const rewards: ObjectKind[] = ['pearl', 'pink-shell', 'star', 'gem', 'teal-spiral']; const reward = rewards[this.progress.wins % rewards.length]; this.progress.charms.push(reward); this.chapterStep++;
     const finishedChapter = this.chapterStep >= 5;
+    if (finishedChapter) this.modesSinceBridge++;
     this.saveProgress(); this.refreshNecklace();
     if (finishedChapter) this.celebrate('You completed the necklace!', 3500, () => { this.chapterStep = 0; this.chapterIndex++; this.chapterJewels = []; });
     else this.celebrate(['That’s it!', 'You found it!', 'Wonderful thinking!', 'Yes! Well done!'][this.progress.wins % 4]); }
@@ -233,6 +235,7 @@ export class MermaidGameScene extends Phaser.Scene {
       this.tweens.add({ targets: bubble, y: Phaser.Math.Between(100, 360), x: bubble.x + Phaser.Math.Between(-35, 35), alpha: 0, duration: Phaser.Math.Between(1100, 1700), ease: 'Sine.Out', onComplete: () => bubble.destroy() });
     });
     this.time.delayedCall(delay, () => { beforeNext?.(); this.nextRound(); }); }
+  private resetBridgeCadence(): void { this.modesSinceBridge = 0; this.nextBridgeAt = Phaser.Math.Between(2, 3); }
   private wrong(target: Phaser.GameObjects.GameObject): void { this.progress.attempts++; this.saveProgress(); this.setMermaid('mermaid-think'); this.prompt.setText('Nearly! Try another one.'); this.speak('Nearly! Try another one.'); this.tweens.add({ targets: target, x: '+=10', duration: 65, yoyo: true, repeat: 3 }); this.time.delayedCall(900, () => { if (this.round && !this.busy) { this.setMermaid('mermaid-present'); this.prompt.setText(this.round.prompt); } }); }
   private sparkle(x: number, y: number): void {
     const effects = ['effect-gold-sparkle', 'effect-blue-sparkle', 'effect-pink-sparkle', 'effect-star-burst'];
@@ -246,7 +249,13 @@ export class MermaidGameScene extends Phaser.Scene {
     return Array.from({ length: count }, (_, index) => new Phaser.Math.Vector2(x + (index % cols + .5) * width / cols, y + (Math.floor(index / cols) + .5) * height / rows));
   }
   private setMermaid(key: string): void { const hostX = this.round?.mode === 'number' && !this.worldBridge ? 1045 : 875; this.mermaid.setTexture(key).setDisplaySize(385, 510).setX(hostX + this.layoutOffset); }
-  private speak(text: string): void { if (!this.soundEnabled || !this.speechUnlocked || !('speechSynthesis' in window)) return; window.speechSynthesis.cancel(); window.speechSynthesis.resume(); const utterance = new SpeechSynthesisUtterance(text); utterance.lang = 'en-GB'; utterance.volume = 1; utterance.rate = .88; utterance.pitch = 1.12; const voices = speechSynthesis.getVoices(); utterance.voice = voices.find(voice => voice.lang.startsWith('en') && /female|samantha|victoria|serena/i.test(voice.name)) ?? voices.find(voice => voice.lang.startsWith('en')) ?? null; speechSynthesis.speak(utterance); }
+  private speak(text: string, immediate = false): void {
+    if (!this.soundEnabled || !this.speechUnlocked || !('speechSynthesis' in window)) return;
+    if (this.speechTimer !== undefined) window.clearTimeout(this.speechTimer);
+    const begin = (): void => { if (!this.soundEnabled) return; window.speechSynthesis.cancel(); window.speechSynthesis.resume(); const utterance = new SpeechSynthesisUtterance(text); utterance.lang = 'en-GB'; utterance.volume = 1; utterance.rate = .88; utterance.pitch = 1.12; const voices = speechSynthesis.getVoices(); utterance.voice = voices.find(voice => voice.lang.startsWith('en') && /female|samantha|victoria|serena/i.test(voice.name)) ?? voices.find(voice => voice.lang.startsWith('en')) ?? null; speechSynthesis.speak(utterance); };
+    const onAppleMobile = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+    if (onAppleMobile && !immediate) { window.speechSynthesis.cancel(); this.speechTimer = window.setTimeout(begin, 90); } else begin();
+  }
   private textStyle(size: number, color: string): Phaser.Types.GameObjects.Text.TextStyle { return { fontFamily: 'ui-rounded, "Arial Rounded MT Bold", system-ui', fontSize: `${size}px`, color, fontStyle: 'bold', stroke: '#ffffff', strokeThickness: size > 25 ? 3 : 0 }; }
   private loadProgress(): void { try { const stored = localStorage.getItem(SAVE_KEY); if (stored) this.progress = { ...this.progress, ...JSON.parse(stored) }; } catch { /* Keep play available when storage is restricted. */ } }
   private saveProgress(): void { try { localStorage.setItem(SAVE_KEY, JSON.stringify(this.progress)); } catch { /* Progress is optional. */ } }

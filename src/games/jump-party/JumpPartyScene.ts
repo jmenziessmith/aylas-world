@@ -29,7 +29,6 @@ export class JumpPartyScene extends Phaser.Scene {
   private powerText!: Phaser.GameObjects.Text;
   private cheerText!: Phaser.GameObjects.Text;
   private tapHint!: Phaser.GameObjects.Text;
-  private gamesButton!: Phaser.GameObjects.Text;
   private leftZone!: Phaser.GameObjects.Zone;
   private rightZone!: Phaser.GameObjects.Zone;
   private cursors?: Phaser.Types.Input.Keyboard.CursorKeys;
@@ -173,8 +172,8 @@ export class JumpPartyScene extends Phaser.Scene {
   private createHud(): void {
     this.jumpLabel = this.add.image(465, 58, 'hud-jumps').setDisplaySize(300, 100).setScrollFactor(0).setDepth(100);
     this.jumpText = this.add.text(398, 60, '0', this.counterStyle()).setOrigin(0.5).setScrollFactor(0).setDepth(101);
-    this.balloonLabel = this.add.image(815, 58, 'hud-balloons').setDisplaySize(300, 100).setScrollFactor(0).setDepth(100);
-    this.balloonText = this.add.text(755, 60, '0', this.counterStyle()).setOrigin(0.5).setScrollFactor(0).setDepth(101);
+    this.balloonLabel = this.add.image(815, 64, 'hud-balloons').setDisplaySize(300, 100).setScrollFactor(0).setDepth(100);
+    this.balloonText = this.add.text(755, 66, '0', this.counterStyle()).setOrigin(0.5).setScrollFactor(0).setDepth(101);
     this.powerText = this.add.text(640, 112, '', { fontFamily: 'ui-rounded, system-ui', fontSize: '28px', color: '#7b287d', fontStyle: 'bold', stroke: '#ffffff', strokeThickness: 6 }).setOrigin(0.5).setScrollFactor(0).setDepth(101);
     this.cheerText = this.add.text(640, 158, 'Let’s jump!', { fontFamily: 'ui-rounded, system-ui', fontSize: '30px', color: '#7b287d', fontStyle: 'bold', stroke: '#ffffff', strokeThickness: 7 }).setOrigin(0.5).setScrollFactor(0).setDepth(101);
     this.tweens.add({ targets: this.cheerText, scale: 1.08, duration: 650, yoyo: true, repeat: 1, ease: 'Sine.InOut' });
@@ -185,8 +184,6 @@ export class JumpPartyScene extends Phaser.Scene {
     this.rightZone = this.makeMovementZone(1280 * 2 / 3, 360, 1280 / 3, 360, (down) => { this.rightDown = down; });
     this.tapHint = this.add.text(640, 675, 'TAP TO JUMP', { fontFamily: 'ui-rounded, system-ui', fontSize: '20px', color: '#493453', fontStyle: 'bold', stroke: '#ffffff', strokeThickness: 5 }).setOrigin(0.5).setScrollFactor(0).setDepth(109);
 
-    this.gamesButton = this.add.text(1170, 42, '‹ Games', { fontFamily: 'ui-rounded, system-ui', fontSize: '20px', color: '#24495b', fontStyle: 'bold', backgroundColor: '#ffffffee', padding: { x: 13, y: 10 } }).setOrigin(0.5).setScrollFactor(0).setDepth(110).setInteractive({ cursor: 'pointer' });
-    this.gamesButton.on(Phaser.Input.Events.POINTER_DOWN, () => { window.location.href = import.meta.env.BASE_URL; });
   }
 
   private handleScreenTap(_pointer: Phaser.Input.Pointer, currentlyOver: Phaser.GameObjects.GameObject[]): void {
@@ -352,7 +349,7 @@ export class JumpPartyScene extends Phaser.Scene {
       return;
     }
 
-    if (localStorage.getItem(MOTION_PERMISSION_STORAGE_KEY) === 'yes') {
+    if (localStorage.getItem(MOTION_PERMISSION_STORAGE_KEY) === 'yes' && !this.motionInput.requiresGesturePermission) {
       this.motionInput.enablePreviouslyGranted();
       this.motionEnabled = true;
       this.tapHint.setVisible(false);
@@ -360,6 +357,10 @@ export class JumpPartyScene extends Phaser.Scene {
     }
 
     this.motionPermissionButton = button;
+    if (this.motionInput.requiresGesturePermission && localStorage.getItem(MOTION_PERMISSION_STORAGE_KEY) === 'yes') {
+      message.textContent = 'Tap to turn motion jumping on again.';
+      button.textContent = 'Turn motion on';
+    }
     prompt.removeAttribute('hidden');
     button.addEventListener('click', this.requestMotionPermission);
     skip.addEventListener('click', this.dismissMotionPermission);
@@ -435,7 +436,6 @@ export class JumpPartyScene extends Phaser.Scene {
     this.powerText?.setX(centerX);
     this.cheerText?.setX(centerX);
     this.tapHint?.setX(centerX);
-    this.gamesButton?.setX(visibleWidth - 110);
     this.leftZone?.setPosition(0, BASE_HEIGHT / 2).setSize(visibleWidth / 3, BASE_HEIGHT / 2);
     this.rightZone?.setPosition(visibleWidth * 2 / 3, BASE_HEIGHT / 2).setSize(visibleWidth / 3, BASE_HEIGHT / 2);
 

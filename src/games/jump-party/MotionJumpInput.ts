@@ -15,6 +15,10 @@ export class MotionJumpInput {
     return typeof window !== 'undefined' && 'DeviceMotionEvent' in window;
   }
 
+  get requiresGesturePermission(): boolean {
+    return this.supported && typeof (DeviceMotionEvent as PermissionedMotionEvent).requestPermission === 'function';
+  }
+
   async enable(): Promise<'enabled' | 'denied' | 'unsupported' | 'insecure'> {
     if (!window.isSecureContext) return 'insecure';
     if (!this.supported) return 'unsupported';

@@ -78,8 +78,32 @@ export function createRound(level: number, previous?: Mode, forcedMode?: Mode): 
 }
 
 export const worldBridgePrompts = [
-  'In your home, can you find three things and put them together?', 'Can you show someone at home five fingers?',
-  'Can you find something round in your home or nearby?', 'Can you find three blue things in your home?',
-  'Can you stand somewhere safe and clap four times?', 'Nearby, can you find one small thing and one big thing?',
-  'Can you make a pattern with two toys at home?', 'Put two toys near you down, then add one more. How many are there?'
+  'At home, can you find three things and put them together?',
+  'Can you show someone at home five fingers?',
+  'Can you find something round at home or nearby?',
+  'Can you find three blue things at home?',
+  'Stand somewhere safe and clap four times.',
+  'Nearby, can you find one small thing and one big thing?',
+  'Put two toys in front of you. Add one more. How many are there now?',
+  'Can you find two things that are the same colour?',
+  'Can you find one soft thing and one hard thing?',
+  'Can you find something fluffy and something smooth?',
+  'Can you find something that makes a quiet sound?',
+  'Can you find something green at home or nearby?',
+  'Can you find a matching pair, like two socks or two shoes?',
+  'Can you find something tiny and something enormous?',
+  'Can you find something rough and something slippery?',
+  'Pretend to be a mermaid. Gently swish your arms like waves three times.',
+  'Pretend your hands are little fish. Can they swim in a circle?',
+  'Can you find two things that belong together?',
+  'Can you find something with spots and something with stripes?',
+  'Show someone three fingers, then two fingers. How many fingers did you show altogether?',
+  'Find a book. Is it bigger or smaller than your hand?',
+  'Can you take three steps, then two more steps?',
+  'Tap your knees, clap, tap your knees, clap. Can you copy that pattern?',
+  'Find something shaped like a circle and something shaped like a rectangle.',
+  'Can you collect four socks or four blocks into one little group?',
+  'Find two cups. Put one beside the other. Are they the same size?',
+  'Can you find something red, something blue, and something yellow?',
+  'Give someone at home two high-fives, then one more. How many high-fives was that?'
 ];

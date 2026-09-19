@@ -7,6 +7,8 @@ import { MermaidGameScene } from './games/mermaid/MermaidGameScene';
 const selectedGame = new URLSearchParams(window.location.search).get('game');
 const scene = selectedGame === 'jump-party' ? JumpPartyScene : selectedGame === 'crocodile-river' ? CrocodileRiverScene : selectedGame === 'mermaid' ? MermaidGameScene : undefined;
 let game: Phaser.Game | undefined;
+const gameHomeButton = document.querySelector<HTMLButtonElement>('#game-home');
+gameHomeButton?.addEventListener('click', () => { window.location.href = import.meta.env.BASE_URL; });
 
 const syncVisualViewport = (): void => {
   const width = Math.round(window.visualViewport?.width ?? window.innerWidth);
@@ -20,6 +22,7 @@ if (scene) {
   document.body.classList.add('playing');
   document.querySelector('#launcher')?.setAttribute('hidden', '');
   document.querySelector('#game-loader')?.removeAttribute('hidden');
+  if (selectedGame === 'crocodile-river' || selectedGame === 'jump-party') gameHomeButton?.removeAttribute('hidden');
   const isIphoneSafari = /iPhone|iPod/.test(navigator.userAgent);
   const isStandalone = matchMedia('(display-mode: standalone)').matches
     || (navigator as Navigator & { standalone?: boolean }).standalone === true;
