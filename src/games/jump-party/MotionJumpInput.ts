@@ -15,7 +15,8 @@ export class MotionJumpInput {
     return typeof window !== 'undefined' && 'DeviceMotionEvent' in window;
   }
 
-  async enable(): Promise<'enabled' | 'denied' | 'unsupported'> {
+  async enable(): Promise<'enabled' | 'denied' | 'unsupported' | 'insecure'> {
+    if (!window.isSecureContext) return 'insecure';
     if (!this.supported) return 'unsupported';
     const MotionEvent = DeviceMotionEvent as PermissionedMotionEvent;
     try {

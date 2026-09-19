@@ -11,28 +11,23 @@ export interface PartyObject {
 }
 
 export const jumpPartyLevel = {
-  worldWidth: 3600,
+  worldWidth: 1280,
   groundY: 605,
-  startX: 360,
+  startX: 640,
   objects: [
-    { id: 'b1', type: 'balloon', colour: 'pink', x: 650, y: 430, bobHeight: 15, bobDuration: 1500 },
-    { id: 'b2', type: 'balloon', colour: 'yellow', x: 890, y: 355, bobHeight: 20, bobDuration: 1800 },
-    { id: 'p1', type: 'puddle', x: 1110, y: 595 },
-    { id: 'b3', type: 'balloon', colour: 'teal', x: 1200, y: 420, bobHeight: 13, bobDuration: 1650 },
-    { id: 'cake1', type: 'cake', x: 1430, y: 525 },
-    { id: 'b4', type: 'balloon', colour: 'purple', x: 1510, y: 320, bobHeight: 22, bobDuration: 1950 },
-    { id: 'b5', type: 'balloon', colour: 'pink', x: 1770, y: 410, bobHeight: 17, bobDuration: 1450 },
-    { id: 'bag1', type: 'party-bag', x: 1960, y: 530 },
-    { id: 'b6', type: 'balloon', colour: 'yellow', x: 2020, y: 345, bobHeight: 12, bobDuration: 1750 },
-    { id: 'p2', type: 'puddle', x: 2260, y: 595 },
-    { id: 'b7', type: 'balloon', colour: 'teal', x: 2320, y: 420, bobHeight: 19, bobDuration: 1850 },
-    { id: 'b8', type: 'balloon', colour: 'purple', x: 2570, y: 360, bobHeight: 15, bobDuration: 1550 },
-    { id: 'cake2', type: 'cake', x: 2770, y: 525 },
-    { id: 'b9', type: 'balloon', colour: 'pink', x: 2860, y: 415, bobHeight: 21, bobDuration: 1900 },
-    { id: 'bag2', type: 'party-bag', x: 3090, y: 530 },
-    { id: 'b10', type: 'balloon', colour: 'yellow', x: 3160, y: 335, bobHeight: 14, bobDuration: 1600 },
-    { id: 'b11', type: 'balloon', colour: 'teal', x: 3370, y: 420, bobHeight: 18, bobDuration: 1800 },
-    { id: 'b12', type: 'balloon', colour: 'purple', x: 3460, y: 300, bobHeight: 16, bobDuration: 1700 }
+    { id: 'b1', type: 'balloon', colour: 'pink', x: 205, y: 420, bobHeight: 15, bobDuration: 1500 },
+    { id: 'b2', type: 'balloon', colour: 'yellow', x: 315, y: 330, bobHeight: 20, bobDuration: 1800 },
+    { id: 'b3', type: 'balloon', colour: 'teal', x: 425, y: 415, bobHeight: 13, bobDuration: 1650 },
+    { id: 'b4', type: 'balloon', colour: 'purple', x: 535, y: 310, bobHeight: 22, bobDuration: 1950 },
+    { id: 'b5', type: 'balloon', colour: 'pink', x: 645, y: 410, bobHeight: 17, bobDuration: 1450 },
+    { id: 'b6', type: 'balloon', colour: 'yellow', x: 755, y: 325, bobHeight: 12, bobDuration: 1750 },
+    { id: 'b7', type: 'balloon', colour: 'teal', x: 865, y: 415, bobHeight: 19, bobDuration: 1850 },
+    { id: 'b8', type: 'balloon', colour: 'purple', x: 975, y: 320, bobHeight: 15, bobDuration: 1550 },
+    { id: 'b9', type: 'balloon', colour: 'pink', x: 1085, y: 410, bobHeight: 21, bobDuration: 1900 },
+    { id: 'b10', type: 'balloon', colour: 'yellow', x: 1165, y: 315, bobHeight: 14, bobDuration: 1600 },
+    { id: 'p1', type: 'puddle', x: 790, y: 595 },
+    { id: 'cake1', type: 'cake', x: 465, y: 525 },
+    { id: 'bag1', type: 'party-bag', x: 1020, y: 530 }
   ] satisfies PartyObject[]
 } as const;
 

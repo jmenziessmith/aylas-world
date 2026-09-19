@@ -4,9 +4,9 @@ import { MotionJumpInput } from './MotionJumpInput';
 
 const BASE_HEIGHT = 720;
 const ASSETS = `${import.meta.env.BASE_URL}assets/jump-party`;
-const NORMAL_JUMP_SPEED = 720;
-const POWERED_JUMP_SPEED = 940;
-const GRAVITY = 1750;
+const NORMAL_JUMP_SPEED = 820;
+const POWERED_JUMP_SPEED = 1080;
+const GRAVITY = 2600;
 const MOVE_SPEED = 360;
 
 export class JumpPartyScene extends Phaser.Scene {
@@ -24,6 +24,7 @@ export class JumpPartyScene extends Phaser.Scene {
   private jumpText!: Phaser.GameObjects.Text;
   private balloonText!: Phaser.GameObjects.Text;
   private powerText!: Phaser.GameObjects.Text;
+  private cheerText!: Phaser.GameObjects.Text;
   private cursors?: Phaser.Types.Input.Keyboard.CursorKeys;
   private balloons: Phaser.GameObjects.Image[] = [];
   private collectibles: Array<{ config: PartyObject; sprite: Phaser.GameObjects.Image }> = [];
@@ -50,7 +51,7 @@ export class JumpPartyScene extends Phaser.Scene {
     this.cursors = this.input.keyboard?.createCursorKeys();
     this.input.keyboard?.on('keydown-SPACE', this.tryJump, this);
     this.input.keyboard?.on('keydown-W', this.tryJump, this);
-    this.cameras.main.startFollow(this.player, true, 0.1, 0.1);
+    this.input.on(Phaser.Input.Events.POINTER_DOWN, this.handleScreenTap, this);
     this.scale.on(Phaser.Scale.Events.RESIZE, this.resize, this);
     this.motionInput = new MotionJumpInput(() => this.tryJump());
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, this.shutdown, this);
@@ -76,10 +77,9 @@ export class JumpPartyScene extends Phaser.Scene {
   }
 
   private createScenery(): void {
-    const textureWidth = 1280;
-    for (let x = 0; x < jumpPartyLevel.worldWidth; x += textureWidth) {
-      this.add.image(x, 0, 'background').setOrigin(0).setDisplaySize(textureWidth, BASE_HEIGHT).setDepth(-20);
-    }
+    const source = this.textures.get('background').getSourceImage() as HTMLImageElement;
+    const scale = BASE_HEIGHT / source.height;
+    this.add.image(640, BASE_HEIGHT / 2, 'background').setScale(scale).setDepth(-20);
   }
 
   private createObjects(): void {
@@ -108,28 +108,36 @@ export class JumpPartyScene extends Phaser.Scene {
   }
 
   private createHud(): void {
-    this.add.image(38, 24, 'hud-jumps').setOrigin(0).setDisplaySize(190, 63).setScrollFactor(0).setDepth(100);
-    this.jumpText = this.add.text(235, 54, `0 / ${JUMP_TARGET}`, this.counterStyle()).setOrigin(0, 0.5).setScrollFactor(0).setDepth(101);
-    this.add.image(880, 24, 'hud-balloons').setOrigin(0).setDisplaySize(220, 63).setScrollFactor(0).setDepth(100);
-    this.balloonText = this.add.text(1107, 54, `0 / ${BALLOON_TARGET}`, this.counterStyle()).setOrigin(0, 0.5).setScrollFactor(0).setDepth(101);
-    this.powerText = this.add.text(640, 105, '', { fontFamily: 'ui-rounded, system-ui', fontSize: '28px', color: '#7b287d', fontStyle: 'bold', stroke: '#ffffff', strokeThickness: 6 }).setOrigin(0.5).setScrollFactor(0).setDepth(101);
+    this.add.rectangle(190, 57, 340, 82, 0xffffff, 0.9).setStrokeStyle(4, 0x70ccea).setScrollFactor(0).setDepth(99);
+    this.add.rectangle(1085, 57, 350, 82, 0xffffff, 0.9).setStrokeStyle(4, 0xf18ab4).setScrollFactor(0).setDepth(99);
+    this.add.image(28, 25, 'hud-jumps').setOrigin(0).setDisplaySize(185, 62).setScrollFactor(0).setDepth(100);
+    this.jumpText = this.add.text(220, 56, `0 / ${JUMP_TARGET}`, this.counterStyle()).setOrigin(0, 0.5).setScrollFactor(0).setDepth(101);
+    this.add.image(915, 25, 'hud-balloons').setOrigin(0).setDisplaySize(205, 62).setScrollFactor(0).setDepth(100);
+    this.balloonText = this.add.text(1125, 56, `0 / ${BALLOON_TARGET}`, this.counterStyle()).setOrigin(0, 0.5).setScrollFactor(0).setDepth(101);
+    this.powerText = this.add.text(640, 112, '', { fontFamily: 'ui-rounded, system-ui', fontSize: '28px', color: '#7b287d', fontStyle: 'bold', stroke: '#ffffff', strokeThickness: 6 }).setOrigin(0.5).setScrollFactor(0).setDepth(101);
+    this.cheerText = this.add.text(640, 158, 'Let’s jump!', { fontFamily: 'ui-rounded, system-ui', fontSize: '30px', color: '#7b287d', fontStyle: 'bold', stroke: '#ffffff', strokeThickness: 7 }).setOrigin(0.5).setScrollFactor(0).setDepth(101);
+    this.tweens.add({ targets: this.cheerText, scale: 1.08, duration: 650, yoyo: true, repeat: 1, ease: 'Sine.InOut' });
   }
 
   private createControls(): void {
-    this.makeHoldButton(105, 610, '◀', (down) => { this.leftDown = down; });
-    this.makeHoldButton(245, 610, '▶', (down) => { this.rightDown = down; });
-    const jump = this.add.circle(1160, 603, 72, 0xff79af, 0.94).setStrokeStyle(7, 0xffffff).setScrollFactor(0).setDepth(110).setInteractive({ cursor: 'pointer' });
-    const label = this.add.text(1160, 603, 'JUMP!', { fontFamily: 'ui-rounded, system-ui', fontSize: '27px', fontStyle: 'bold', color: '#61275d' }).setOrigin(0.5).setScrollFactor(0).setDepth(111);
-    jump.on('pointerdown', () => { jump.setScale(0.91); label.setScale(0.91); this.tryJump(); });
-    jump.on('pointerup', () => { jump.setScale(1); label.setScale(1); });
-    jump.on('pointerout', () => { jump.setScale(1); label.setScale(1); });
+    this.makeHoldButton(92, 610, '◀', (down) => { this.leftDown = down; });
+    this.makeHoldButton(1188, 610, '▶', (down) => { this.rightDown = down; });
+    this.add.text(640, 665, 'TAP ANYWHERE TO JUMP', { fontFamily: 'ui-rounded, system-ui', fontSize: '22px', color: '#493453', fontStyle: 'bold', stroke: '#ffffff', strokeThickness: 5 }).setOrigin(0.5).setScrollFactor(0).setDepth(109);
 
-    const motion = this.add.text(640, 45, '📱 Enable motion jump', { fontFamily: 'ui-rounded, system-ui', fontSize: '21px', color: '#24495b', backgroundColor: '#ffffffdd', padding: { x: 15, y: 9 } }).setOrigin(0.5).setScrollFactor(0).setDepth(110).setInteractive({ cursor: 'pointer' });
+    const motion = this.add.text(640, 62, '📱 Enable motion jump', { fontFamily: 'ui-rounded, system-ui', fontSize: '21px', color: '#24495b', backgroundColor: '#ffffffdd', padding: { x: 15, y: 9 } }).setOrigin(0.5).setScrollFactor(0).setDepth(110).setInteractive({ cursor: 'pointer' });
     motion.on('pointerdown', async () => {
       const result = await this.motionInput?.enable() ?? 'unsupported';
-      motion.setText(result === 'enabled' ? '✓ Motion jump on' : result === 'denied' ? 'Motion unavailable — use JUMP!' : 'Use the JUMP! button');
+      const status = result === 'enabled' ? '✓ Motion jump on'
+        : result === 'insecure' ? '🔒 Motion needs HTTPS'
+          : result === 'denied' ? 'Motion denied — tap to jump'
+            : 'Motion unavailable — tap to jump';
+      motion.setText(status);
       motion.disableInteractive();
     });
+  }
+
+  private handleScreenTap(_pointer: Phaser.Input.Pointer, currentlyOver: Phaser.GameObjects.GameObject[]): void {
+    if (currentlyOver.length === 0) this.tryJump();
   }
 
   private makeHoldButton(x: number, y: number, label: string, set: (down: boolean) => void): void {
@@ -148,6 +156,8 @@ export class JumpPartyScene extends Phaser.Scene {
     this.jumps += 1;
     this.ayla.setTexture(powered ? 'ayla-powered' : 'ayla-jump').setScale(powered ? 0.15 : 0.14);
     this.jumpText.setText(`${this.jumps} / ${JUMP_TARGET}`);
+    this.tweens.add({ targets: this.jumpText, scale: 1.22, duration: 100, yoyo: true, ease: 'Back.Out' });
+    this.celebrateJumpMilestone();
     this.updatePowerText();
     this.tweens.killTweensOf(this.ayla);
     this.tweens.add({ targets: this.player, scaleX: 0.9, scaleY: 1.1, duration: 100, yoyo: true });
@@ -196,7 +206,6 @@ export class JumpPartyScene extends Phaser.Scene {
     balloon.destroy();
     this.balloonsPopped += 1;
     this.balloonText.setText(`${this.balloonsPopped} / ${BALLOON_TARGET}`);
-    this.cameras.main.flash(90, 255, 245, 180, false);
     this.checkCompletion();
   }
 
@@ -216,7 +225,6 @@ export class JumpPartyScene extends Phaser.Scene {
     puddle.ready = false;
     const splash = this.add.image(puddle.config.x, jumpPartyLevel.groundY - 35, 'splash').setScale(0.05).setDepth(25);
     this.tweens.add({ targets: splash, scaleX: 0.25, scaleY: 0.22, alpha: { from: 1, to: 0 }, y: splash.y - 45, duration: 600, ease: 'Quad.Out', onComplete: () => splash.destroy() });
-    this.cameras.main.shake(130, 0.004);
   }
 
   private powerBurst(): void {
@@ -267,13 +275,42 @@ export class JumpPartyScene extends Phaser.Scene {
     this.powerText.setText(this.poweredJumps > 0 ? `✨ ${this.poweredJumps} SUPER JUMPS! ✨` : '');
   }
 
+  private celebrateJumpMilestone(): void {
+    const messages: Record<number, string> = {
+      5: 'Great jumping!',
+      10: 'Ten brilliant jumps!',
+      15: 'Keep bouncing!',
+      20: 'Halfway — amazing!',
+      25: 'Jump Party superstar!',
+      30: 'Ten jumps to go!',
+      35: 'Nearly there!',
+      40: 'Forty fantastic jumps!'
+    };
+    const message = messages[this.jumps];
+    if (!message) return;
+    this.cheerText.setText(message).setAlpha(1).setScale(0.75);
+    this.tweens.killTweensOf(this.cheerText);
+    this.tweens.add({
+      targets: this.cheerText,
+      scale: 1.18,
+      duration: 260,
+      ease: 'Back.Out',
+      yoyo: true,
+      hold: 650,
+      onComplete: () => this.tweens.add({ targets: this.cheerText, alpha: 0, duration: 450 })
+    });
+    this.sparkles(this.player.x, this.player.y - 120);
+  }
+
   private counterStyle(): Phaser.Types.GameObjects.Text.TextStyle {
     return { fontFamily: 'ui-rounded, system-ui', fontSize: '31px', color: '#243d69', fontStyle: 'bold', stroke: '#ffffff', strokeThickness: 5 };
   }
 
   private resize(gameSize: Phaser.Structs.Size): void {
     const zoom = gameSize.height / BASE_HEIGHT;
-    this.cameras.main.setViewport(0, 0, gameSize.width, gameSize.height).setZoom(zoom).setDeadzone(Math.min(280, gameSize.width / zoom * 0.2), 240);
+    const visibleWidth = gameSize.width / zoom;
+    this.cameras.main.setViewport(0, 0, gameSize.width, gameSize.height).setZoom(zoom).centerOn(640, BASE_HEIGHT / 2);
+    if (visibleWidth < 1280) this.cameras.main.setZoom(gameSize.width / 1280);
   }
 
   private resetState(): void {
@@ -286,6 +323,7 @@ export class JumpPartyScene extends Phaser.Scene {
     this.scale.off(Phaser.Scale.Events.RESIZE, this.resize, this);
     this.input.keyboard?.off('keydown-SPACE', this.tryJump, this);
     this.input.keyboard?.off('keydown-W', this.tryJump, this);
+    this.input.off(Phaser.Input.Events.POINTER_DOWN, this.handleScreenTap, this);
     this.motionInput?.destroy();
   }
 }

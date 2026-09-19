@@ -4,6 +4,10 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no" />
     <meta name="theme-color" content="#7ccff4" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="Ayla's World" />
+    <link rel="manifest" href="/manifest.webmanifest" />
     <title>Ayla's World</title>
   </head>
   <body>
@@ -23,6 +27,10 @@
       </section>
     </main>
     <main id="game"></main>
+    <aside id="ios-help" hidden>
+      <span>For full screen: tap <strong>Share</strong>, then <strong>Add to Home Screen</strong>.</span>
+      <button id="dismiss-ios-help" type="button">Got it</button>
+    </aside>
     <button id="fullscreen-toggle" type="button" aria-label="Toggle full screen">⛶</button>
     <div id="rotate-message" aria-hidden="true"><div class="rotate-card">↻</div></div>
     <script type="module" src="/src/main.ts"></script>

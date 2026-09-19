@@ -10,6 +10,10 @@ let game: Phaser.Game | undefined;
 if (scene) {
   document.body.classList.add('playing');
   document.querySelector('#launcher')?.setAttribute('hidden', '');
+  const isIphoneSafari = /iPhone|iPod/.test(navigator.userAgent);
+  const isStandalone = matchMedia('(display-mode: standalone)').matches
+    || (navigator as Navigator & { standalone?: boolean }).standalone === true;
+  if (isIphoneSafari && !isStandalone) document.querySelector('#ios-help')?.removeAttribute('hidden');
   game = new Phaser.Game({
   type: Phaser.AUTO,
   parent: 'game',
@@ -45,6 +49,8 @@ const fullscreenDocument = document as Document & {
   webkitExitFullscreen?: () => Promise<void>;
 };
 const fullscreenButton = document.querySelector<HTMLButtonElement>('#fullscreen-toggle');
+const fullscreenSupported = Boolean(fullscreenElement.requestFullscreen || fullscreenElement.webkitRequestFullscreen);
+if (!fullscreenSupported) fullscreenButton?.setAttribute('hidden', '');
 
 const toggleFullscreen = async (): Promise<void> => {
   if (!game) return;
@@ -59,3 +65,6 @@ const toggleFullscreen = async (): Promise<void> => {
 };
 
 fullscreenButton?.addEventListener('click', () => void toggleFullscreen());
+document.querySelector('#dismiss-ios-help')?.addEventListener('click', () => {
+  document.querySelector('#ios-help')?.setAttribute('hidden', '');
+});

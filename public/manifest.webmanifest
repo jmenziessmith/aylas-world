@@ -1,0 +1,16 @@
+{
+  "name": "Ayla's World",
+  "short_name": "Ayla's World",
+  "description": "Playful games with Ayla Monster",
+  "start_url": "./",
+  "display": "standalone",
+  "orientation": "landscape",
+  "background_color": "#75c8ef",
+  "theme_color": "#75c8ef",
+  "icons": [{
+    "src": "assets/character/ayla.webp",
+    "sizes": "512x512",
+    "type": "image/webp",
+    "purpose": "any"
+  }]
+}
