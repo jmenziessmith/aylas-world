@@ -1,0 +1,4 @@
+# Keep this repository's Codex sessions lightweight and direct.
+# In particular, do not inject globally-installed workflow skills such as Superpowers.
+[skills]
+include_instructions = false

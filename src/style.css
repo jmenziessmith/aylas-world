@@ -1,0 +1,36 @@
+:root {
+  font-family: ui-rounded, "SF Pro Rounded", system-ui, sans-serif;
+  background: #75c8ef;
+  color: #142f3d;
+  touch-action: none;
+}
+
+* { box-sizing: border-box; }
+html, body, #game { width: 100%; height: 100%; margin: 0; overflow: hidden; }
+body { overscroll-behavior: none; background: #75c8ef; }
+canvas { display: block; width: 100% !important; height: 100% !important; touch-action: none; }
+
+#rotate-message {
+  display: none;
+  position: fixed;
+  inset: 0;
+  z-index: 20;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(#8bd8f7, #dff6ff);
+}
+.rotate-card {
+  width: 90px;
+  height: 90px;
+  display: grid;
+  place-items: center;
+  border-radius: 28px;
+  background: rgba(255,255,255,.88);
+  box-shadow: 0 12px 32px rgba(26,64,87,.18);
+  font-size: 48px;
+}
+
+@media (orientation: portrait) {
+  #rotate-message { display: flex; }
+  #game { visibility: hidden; }
+}
