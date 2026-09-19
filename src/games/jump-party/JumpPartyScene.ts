@@ -39,6 +39,7 @@ export class JumpPartyScene extends Phaser.Scene {
   private motionPermissionButton?: HTMLButtonElement;
   private motionEnabled = false;
   private visibleWorldWidth = 1280;
+  private playableWidth = 1280;
 
   constructor() { super('jump-party'); }
 
@@ -75,7 +76,7 @@ export class JumpPartyScene extends Phaser.Scene {
     const keyboardLeft = this.cursors?.left.isDown ?? false;
     const keyboardRight = this.cursors?.right.isDown ?? false;
     const direction = (this.rightDown || keyboardRight ? 1 : 0) - (this.leftDown || keyboardLeft ? 1 : 0);
-    this.player.x = Phaser.Math.Clamp(this.player.x + direction * MOVE_SPEED * dt, 95, jumpPartyLevel.worldWidth - 95);
+    this.player.x = Phaser.Math.Clamp(this.player.x + direction * MOVE_SPEED * dt, 95, this.playableWidth - 95);
     if (direction !== 0) this.ayla.setFlipX(direction < 0);
 
     if (!this.onGround) {
@@ -108,30 +109,42 @@ export class JumpPartyScene extends Phaser.Scene {
   }
 
   private spawnBalloon(config: PartyObject, floatIn = false): void {
-    const balloon = this.add.image(config.x, floatIn ? BASE_HEIGHT + 100 : config.y, `balloon-${config.colour}`)
+    const anchorX = this.getBalloonAnchorX(config.x);
+    const balloon = this.add.image(anchorX, floatIn ? BASE_HEIGHT + 100 : config.y, `balloon-${config.colour}`)
       .setScale(0.115).setDepth(8);
     balloon.setData('config', config);
     this.balloons.push(balloon);
     const startBobbing = (): void => {
-      const driftX = Phaser.Math.Clamp(config.x + Phaser.Math.Between(-70, 70), 145, 1135);
-      const driftY = config.y - (config.bobHeight ?? 15) - Phaser.Math.Between(0, 20);
-      this.tweens.add({
-        targets: balloon,
-        x: driftX,
-        y: driftY,
-        angle: Phaser.Math.Between(-3, 3),
-        duration: config.bobDuration ?? 1700,
-        yoyo: true,
-        repeat: -1,
-        ease: 'Sine.InOut',
-        delay: Phaser.Math.Between(0, 600)
-      });
+      this.startBalloonDrift(balloon, config);
     };
     if (floatIn) {
       this.tweens.add({ targets: balloon, y: config.y, duration: 900, ease: 'Back.Out', onComplete: startBobbing });
     } else {
       startBobbing();
     }
+  }
+
+  private startBalloonDrift(balloon: Phaser.GameObjects.Image, config: PartyObject): void {
+    const anchorX = this.getBalloonAnchorX(config.x);
+    const driftX = Phaser.Math.Clamp(anchorX + Phaser.Math.Between(-70, 70), 130, this.playableWidth - 130);
+    const driftY = config.y - (config.bobHeight ?? 15) - Phaser.Math.Between(0, 20);
+    this.tweens.add({
+      targets: balloon,
+      x: driftX,
+      y: driftY,
+      angle: Phaser.Math.Between(-3, 3),
+      duration: config.bobDuration ?? 1700,
+      yoyo: true,
+      repeat: -1,
+      ease: 'Sine.InOut',
+      delay: Phaser.Math.Between(0, 600)
+    });
+  }
+
+  private getBalloonAnchorX(configX: number): number {
+    const margin = 145;
+    const progress = Phaser.Math.Clamp((configX - 205) / (1135 - 205), 0, 1);
+    return margin + progress * (this.playableWidth - margin * 2);
   }
 
   private spawnCollectible(config: PartyObject): void {
@@ -401,6 +414,7 @@ export class JumpPartyScene extends Phaser.Scene {
     const zoom = gameSize.height / BASE_HEIGHT;
     const visibleWidth = gameSize.width / zoom;
     this.visibleWorldWidth = visibleWidth;
+    this.playableWidth = Phaser.Math.Clamp(visibleWidth, 1280, 2160);
     this.cameras.main.setViewport(0, 0, gameSize.width, gameSize.height).setOrigin(0, 0).setZoom(zoom).setScroll(0, 0);
 
     const centerX = visibleWidth / 2;
@@ -414,10 +428,17 @@ export class JumpPartyScene extends Phaser.Scene {
     this.gamesButton?.setX(visibleWidth - 110);
     this.leftZone?.setPosition(0, BASE_HEIGHT / 2).setSize(visibleWidth / 3, BASE_HEIGHT / 2);
     this.rightZone?.setPosition(visibleWidth * 2 / 3, BASE_HEIGHT / 2).setSize(visibleWidth / 3, BASE_HEIGHT / 2);
+
+    this.balloons.forEach((balloon) => {
+      const config = balloon.getData('config') as PartyObject;
+      this.tweens.killTweensOf(balloon);
+      balloon.setPosition(this.getBalloonAnchorX(config.x), config.y).setAngle(0);
+      this.startBalloonDrift(balloon, config);
+    });
   }
 
   private updateCamera(dt: number): void {
-    const maxScroll = Math.max(0, jumpPartyLevel.worldWidth - this.visibleWorldWidth);
+    const maxScroll = Math.max(0, this.playableWidth - this.visibleWorldWidth);
     const target = Phaser.Math.Clamp(this.player.x - this.visibleWorldWidth / 2, 0, maxScroll);
     this.cameras.main.scrollX = Phaser.Math.Linear(this.cameras.main.scrollX, target, Math.min(1, dt * 6));
   }
