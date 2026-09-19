@@ -13,6 +13,16 @@ html, body { width: 100%; height: var(--app-height); margin: 0; overflow: hidden
 body { position: fixed; inset: 0; overscroll-behavior: none; background: #75c8ef; }
 canvas { display: block; width: 100% !important; height: 100% !important; touch-action: none; }
 
+#game-loader { position: fixed; inset: 0; z-index: 250; display: grid; place-content: center; justify-items: center; gap: 12px; background: linear-gradient(#78d3f5, #d8f5d2); color: #7f3974; font-size: clamp(22px, 4vw, 34px); font-weight: 850; text-align: center; }
+#game-loader[hidden] { display: none; }
+.loader-monster { font-size: 58px; animation: loader-bounce .7s ease-in-out infinite alternate; }
+.loader-dots { display: flex; gap: 9px; }
+.loader-dots i { width: 13px; height: 13px; border-radius: 50%; background: #ef70aa; animation: loader-dot .8s ease-in-out infinite alternate; }
+.loader-dots i:nth-child(2) { animation-delay: .15s; }
+.loader-dots i:nth-child(3) { animation-delay: .3s; }
+@keyframes loader-bounce { to { transform: translateY(-10px) rotate(6deg); } }
+@keyframes loader-dot { to { transform: translateY(-8px); background: #5bbbd5; } }
+
 #ios-help { position: fixed; left: max(12px, env(safe-area-inset-left)); right: max(12px, env(safe-area-inset-right)); bottom: max(12px, env(safe-area-inset-bottom)); z-index: 300; display: flex; align-items: center; justify-content: center; gap: 16px; padding: 12px 18px; border: 3px solid #fff; border-radius: 18px; background: #263a52ed; color: #fff; font-size: 16px; font-weight: 650; text-align: center; box-shadow: 0 8px 24px #1238; touch-action: manipulation; }
 #ios-help[hidden] { display: none; }
 #ios-help button { flex: 0 0 auto; border: 0; border-radius: 13px; padding: 10px 15px; background: #ffd65a; color: #463849; font: inherit; font-weight: 800; }

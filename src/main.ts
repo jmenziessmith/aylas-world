@@ -18,6 +18,7 @@ const syncVisualViewport = (): void => {
 if (scene) {
   document.body.classList.add('playing');
   document.querySelector('#launcher')?.setAttribute('hidden', '');
+  document.querySelector('#game-loader')?.removeAttribute('hidden');
   const isIphoneSafari = /iPhone|iPod/.test(navigator.userAgent);
   const isStandalone = matchMedia('(display-mode: standalone)').matches
     || (navigator as Navigator & { standalone?: boolean }).standalone === true;
@@ -85,4 +86,32 @@ window.addEventListener('orientationchange', () => {
   syncVisualViewport();
   window.setTimeout(syncVisualViewport, 180);
   window.setTimeout(syncVisualViewport, 600);
+});
+
+let checkingForUpdate = false;
+const checkForAppUpdate = async (): Promise<void> => {
+  if (checkingForUpdate || import.meta.env.DEV) return;
+  checkingForUpdate = true;
+  try {
+    const checkUrl = new URL(window.location.href);
+    checkUrl.searchParams.set('_check', Date.now().toString());
+    const response = await fetch(checkUrl, { cache: 'no-store' });
+    const latestHtml = await response.text();
+    const latestScript = latestHtml.match(/<script[^>]+src="([^"]+\.js)"/)?.[1];
+    const currentScript = document.querySelector<HTMLScriptElement>('script[type="module"]')?.getAttribute('src');
+    if (latestScript && currentScript && latestScript !== currentScript) {
+      const reloadUrl = new URL(window.location.href);
+      reloadUrl.searchParams.set('_update', Date.now().toString());
+      window.location.replace(reloadUrl);
+    }
+  } catch {
+    // Staying on the current playable version is better than interrupting offline play.
+  } finally {
+    checkingForUpdate = false;
+  }
+};
+
+window.addEventListener('pageshow', () => void checkForAppUpdate());
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'visible') void checkForAppUpdate();
 });

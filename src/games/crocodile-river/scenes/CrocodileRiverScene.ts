@@ -53,6 +53,7 @@ export class CrocodileRiverScene extends Phaser.Scene {
   }
 
   create(): void {
+    document.querySelector('#game-loader')?.setAttribute('hidden', '');
     this.resetState();
     this.input.mouse?.disableContextMenu();
     this.cameras.main.setBackgroundColor('#89d6f5').setBounds(0, 0, level.worldWidth, BASE_HEIGHT);

@@ -28,7 +28,6 @@ export class JumpPartyScene extends Phaser.Scene {
   private powerText!: Phaser.GameObjects.Text;
   private cheerText!: Phaser.GameObjects.Text;
   private tapHint!: Phaser.GameObjects.Text;
-  private motionControl!: Phaser.GameObjects.Text;
   private gamesButton!: Phaser.GameObjects.Text;
   private leftZone!: Phaser.GameObjects.Zone;
   private rightZone!: Phaser.GameObjects.Zone;
@@ -51,6 +50,7 @@ export class JumpPartyScene extends Phaser.Scene {
   }
 
   create(): void {
+    document.querySelector('#game-loader')?.setAttribute('hidden', '');
     this.resetState();
     this.cameras.main.setBackgroundColor('#76cef5');
     this.createScenery();
@@ -170,19 +170,6 @@ export class JumpPartyScene extends Phaser.Scene {
     this.leftZone = this.makeMovementZone(0, 360, 1280 / 3, 360, (down) => { this.leftDown = down; });
     this.rightZone = this.makeMovementZone(1280 * 2 / 3, 360, 1280 / 3, 360, (down) => { this.rightDown = down; });
     this.tapHint = this.add.text(640, 675, 'TAP TO JUMP', { fontFamily: 'ui-rounded, system-ui', fontSize: '20px', color: '#493453', fontStyle: 'bold', stroke: '#ffffff', strokeThickness: 5 }).setOrigin(0.5).setScrollFactor(0).setDepth(109);
-
-    this.motionControl = this.add.text(640, 630, '📱 Enable motion jump', { fontFamily: 'ui-rounded, system-ui', fontSize: '18px', color: '#24495b', backgroundColor: '#ffffffdd', padding: { x: 12, y: 7 } }).setOrigin(0.5).setScrollFactor(0).setDepth(110).setInteractive({ cursor: 'pointer' });
-    this.motionControl.on('pointerdown', async () => {
-      const result = await this.motionInput?.enable() ?? 'unsupported';
-      const status = result === 'enabled' ? '✓ Motion jump on'
-        : result === 'insecure' ? '🔒 Motion needs HTTPS'
-          : result === 'denied' ? 'Motion denied — tap to jump'
-            : 'Motion unavailable — tap to jump';
-      this.motionControl.setText(status);
-      this.motionEnabled = result === 'enabled';
-      this.tapHint.setVisible(!this.motionEnabled);
-      this.motionControl.disableInteractive();
-    });
 
     this.gamesButton = this.add.text(1170, 42, '‹ Games', { fontFamily: 'ui-rounded, system-ui', fontSize: '20px', color: '#24495b', fontStyle: 'bold', backgroundColor: '#ffffffee', padding: { x: 13, y: 10 } }).setOrigin(0.5).setScrollFactor(0).setDepth(110).setInteractive({ cursor: 'pointer' });
     this.gamesButton.on(Phaser.Input.Events.POINTER_DOWN, () => { window.location.href = import.meta.env.BASE_URL; });
@@ -424,7 +411,6 @@ export class JumpPartyScene extends Phaser.Scene {
     this.powerText?.setX(centerX);
     this.cheerText?.setX(centerX);
     this.tapHint?.setX(centerX);
-    this.motionControl?.setX(centerX);
     this.gamesButton?.setX(visibleWidth - 110);
     this.leftZone?.setPosition(0, BASE_HEIGHT / 2).setSize(visibleWidth / 3, BASE_HEIGHT / 2);
     this.rightZone?.setPosition(visibleWidth * 2 / 3, BASE_HEIGHT / 2).setSize(visibleWidth / 3, BASE_HEIGHT / 2);
