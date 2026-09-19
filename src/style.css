@@ -11,7 +11,7 @@
 html, body { width: 100%; height: var(--app-height); margin: 0; overflow: hidden; }
 #game { width: var(--app-width); height: var(--app-height); margin: 0; overflow: hidden; }
 body { position: fixed; inset: 0; overscroll-behavior: none; background: #75c8ef; }
-canvas { display: block; width: 100% !important; height: 100% !important; touch-action: none; }
+canvas { display: block; touch-action: none; }
 
 #game-loader { position: fixed; inset: 0; z-index: 250; display: grid; place-content: center; justify-items: center; gap: 12px; background: linear-gradient(#78d3f5, #d8f5d2); color: #7f3974; font-size: clamp(22px, 4vw, 34px); font-weight: 850; text-align: center; }
 #game-loader[hidden] { display: none; }

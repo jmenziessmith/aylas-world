@@ -74,8 +74,12 @@ export class CrocodileRiverScene extends Phaser.Scene {
   }
 
   update(): void {
-    const progress = Phaser.Math.Clamp(this.cameras.main.scrollX / this.cameraTravel, 0, 1);
-    this.background.x = -this.backgroundTravel * progress;
+    const camera = this.cameras.main;
+    const progress = Phaser.Math.Clamp(camera.scrollX / this.cameraTravel, 0, 1);
+    this.background.setPosition(
+      camera.scrollX - this.backgroundTravel * progress,
+      camera.scrollY
+    );
     const safeLog = this.movingLogs.get(this.previousSafe.id);
     if (safeLog) {
       this.previousSafe.x = safeLog.sprite.x;
@@ -90,9 +94,8 @@ export class CrocodileRiverScene extends Phaser.Scene {
   }
 
   private createBackground(): void {
-    this.background = this.add.image(0, BASE_HEIGHT / 2, 'background')
-      .setOrigin(0, 0.5)
-      .setScrollFactor(0)
+    this.background = this.add.image(0, 0, 'background')
+      .setOrigin(0)
       .setDepth(-30);
   }
 
