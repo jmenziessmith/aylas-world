@@ -25,12 +25,14 @@ export class JumpPartyScene extends Phaser.Scene {
   private balloonText!: Phaser.GameObjects.Text;
   private powerText!: Phaser.GameObjects.Text;
   private cheerText!: Phaser.GameObjects.Text;
+  private tapHint!: Phaser.GameObjects.Text;
   private cursors?: Phaser.Types.Input.Keyboard.CursorKeys;
   private balloons: Phaser.GameObjects.Image[] = [];
   private collectibles: Array<{ config: PartyObject; sprite: Phaser.GameObjects.Image }> = [];
   private puddles: Array<{ config: PartyObject; sprite: Phaser.GameObjects.Image; ready: boolean }> = [];
   private motionInput?: MotionJumpInput;
   private motionPermissionButton?: HTMLButtonElement;
+  private motionEnabled = false;
 
   constructor() { super('jump-party'); }
 
@@ -103,7 +105,19 @@ export class JumpPartyScene extends Phaser.Scene {
     balloon.setData('config', config);
     this.balloons.push(balloon);
     const startBobbing = (): void => {
-      this.tweens.add({ targets: balloon, y: config.y - (config.bobHeight ?? 15), angle: Phaser.Math.Between(-2, 2), duration: config.bobDuration ?? 1700, yoyo: true, repeat: -1, ease: 'Sine.InOut', delay: Phaser.Math.Between(0, 600) });
+      const driftX = Phaser.Math.Clamp(config.x + Phaser.Math.Between(-70, 70), 145, 1135);
+      const driftY = config.y - (config.bobHeight ?? 15) - Phaser.Math.Between(0, 20);
+      this.tweens.add({
+        targets: balloon,
+        x: driftX,
+        y: driftY,
+        angle: Phaser.Math.Between(-3, 3),
+        duration: config.bobDuration ?? 1700,
+        yoyo: true,
+        repeat: -1,
+        ease: 'Sine.InOut',
+        delay: Phaser.Math.Between(0, 600)
+      });
     };
     if (floatIn) {
       this.tweens.add({ targets: balloon, y: config.y, duration: 900, ease: 'Back.Out', onComplete: startBobbing });
@@ -135,23 +149,21 @@ export class JumpPartyScene extends Phaser.Scene {
   }
 
   private createHud(): void {
-    this.add.rectangle(190, 57, 340, 82, 0xffffff, 0.9).setStrokeStyle(4, 0x70ccea).setDepth(99);
-    this.add.rectangle(1085, 57, 350, 82, 0xffffff, 0.9).setStrokeStyle(4, 0xf18ab4).setDepth(99);
-    this.add.image(28, 25, 'hud-jumps').setOrigin(0).setDisplaySize(185, 62).setDepth(100);
-    this.jumpText = this.add.text(220, 56, `0 / ${JUMP_TARGET}`, this.counterStyle()).setOrigin(0, 0.5).setDepth(101);
-    this.add.image(915, 25, 'hud-balloons').setOrigin(0).setDisplaySize(205, 62).setDepth(100);
-    this.balloonText = this.add.text(1125, 56, `0 / ${BALLOON_TARGET}`, this.counterStyle()).setOrigin(0, 0.5).setDepth(101);
+    this.add.image(405, 55, 'hud-jumps').setCrop(390, 80, 530, 550).setDisplaySize(68, 68).setDepth(100);
+    this.jumpText = this.add.text(450, 55, `Jumps  0 / ${JUMP_TARGET}`, this.counterStyle()).setOrigin(0, 0.5).setDepth(101);
+    this.add.image(685, 55, 'hud-balloons').setCrop(430, 75, 530, 560).setDisplaySize(68, 68).setDepth(100);
+    this.balloonText = this.add.text(730, 55, `Balloons  0 / ${BALLOON_TARGET}`, this.counterStyle()).setOrigin(0, 0.5).setDepth(101);
     this.powerText = this.add.text(640, 112, '', { fontFamily: 'ui-rounded, system-ui', fontSize: '28px', color: '#7b287d', fontStyle: 'bold', stroke: '#ffffff', strokeThickness: 6 }).setOrigin(0.5).setDepth(101);
     this.cheerText = this.add.text(640, 158, 'Let’s jump!', { fontFamily: 'ui-rounded, system-ui', fontSize: '30px', color: '#7b287d', fontStyle: 'bold', stroke: '#ffffff', strokeThickness: 7 }).setOrigin(0.5).setDepth(101);
     this.tweens.add({ targets: this.cheerText, scale: 1.08, duration: 650, yoyo: true, repeat: 1, ease: 'Sine.InOut' });
   }
 
   private createControls(): void {
-    this.makeHoldButton(92, 610, '◀', (down) => { this.leftDown = down; });
-    this.makeHoldButton(1188, 610, '▶', (down) => { this.rightDown = down; });
-    this.add.text(640, 665, 'TAP ANYWHERE TO JUMP', { fontFamily: 'ui-rounded, system-ui', fontSize: '22px', color: '#493453', fontStyle: 'bold', stroke: '#ffffff', strokeThickness: 5 }).setOrigin(0.5).setDepth(109);
+    this.makeMovementZone(0, 360, 1280 / 3, 360, (down) => { this.leftDown = down; });
+    this.makeMovementZone(1280 * 2 / 3, 360, 1280 / 3, 360, (down) => { this.rightDown = down; });
+    this.tapHint = this.add.text(640, 675, 'TAP TO JUMP', { fontFamily: 'ui-rounded, system-ui', fontSize: '20px', color: '#493453', fontStyle: 'bold', stroke: '#ffffff', strokeThickness: 5 }).setOrigin(0.5).setDepth(109);
 
-    const motion = this.add.text(640, 62, '📱 Enable motion jump', { fontFamily: 'ui-rounded, system-ui', fontSize: '21px', color: '#24495b', backgroundColor: '#ffffffdd', padding: { x: 15, y: 9 } }).setOrigin(0.5).setDepth(110).setInteractive({ cursor: 'pointer' });
+    const motion = this.add.text(640, 630, '📱 Enable motion jump', { fontFamily: 'ui-rounded, system-ui', fontSize: '18px', color: '#24495b', backgroundColor: '#ffffffdd', padding: { x: 12, y: 7 } }).setOrigin(0.5).setDepth(110).setInteractive({ cursor: 'pointer' });
     motion.on('pointerdown', async () => {
       const result = await this.motionInput?.enable() ?? 'unsupported';
       const status = result === 'enabled' ? '✓ Motion jump on'
@@ -159,22 +171,24 @@ export class JumpPartyScene extends Phaser.Scene {
           : result === 'denied' ? 'Motion denied — tap to jump'
             : 'Motion unavailable — tap to jump';
       motion.setText(status);
+      this.motionEnabled = result === 'enabled';
+      this.tapHint.setVisible(!this.motionEnabled);
       motion.disableInteractive();
     });
 
-    const games = this.add.text(835, 57, '‹ Games', { fontFamily: 'ui-rounded, system-ui', fontSize: '20px', color: '#24495b', fontStyle: 'bold', backgroundColor: '#ffffffee', padding: { x: 13, y: 10 } }).setOrigin(0.5).setDepth(110).setInteractive({ cursor: 'pointer' });
+    const games = this.add.text(1170, 42, '‹ Games', { fontFamily: 'ui-rounded, system-ui', fontSize: '20px', color: '#24495b', fontStyle: 'bold', backgroundColor: '#ffffffee', padding: { x: 13, y: 10 } }).setOrigin(0.5).setDepth(110).setInteractive({ cursor: 'pointer' });
     games.on(Phaser.Input.Events.POINTER_DOWN, () => { window.location.href = import.meta.env.BASE_URL; });
   }
 
   private handleScreenTap(_pointer: Phaser.Input.Pointer, currentlyOver: Phaser.GameObjects.GameObject[]): void {
-    if (currentlyOver.length === 0) this.tryJump();
+    if (!this.motionEnabled && currentlyOver.length === 0) this.tryJump();
   }
 
-  private makeHoldButton(x: number, y: number, label: string, set: (down: boolean) => void): void {
-    const button = this.add.circle(x, y, 61, 0xffffff, 0.86).setStrokeStyle(6, 0x4fb7d6).setDepth(110).setInteractive({ cursor: 'pointer' });
-    this.add.text(x, y, label, { fontFamily: 'system-ui', fontSize: '49px', color: '#23667d', fontStyle: 'bold' }).setOrigin(0.5).setDepth(111);
-    button.on('pointerdown', () => { set(true); button.setScale(0.92); });
-    ['pointerup', 'pointerout'].forEach((event) => button.on(event, () => { set(false); button.setScale(1); }));
+  private makeMovementZone(x: number, y: number, width: number, height: number, set: (down: boolean) => void): void {
+    const zone = this.add.zone(x, y, width, height).setOrigin(0).setInteractive();
+    zone.on(Phaser.Input.Events.POINTER_DOWN, () => set(true));
+    zone.on(Phaser.Input.Events.POINTER_UP, () => set(false));
+    zone.on(Phaser.Input.Events.POINTER_OUT, () => set(false));
   }
 
   private tryJump(): void {
@@ -185,7 +199,7 @@ export class JumpPartyScene extends Phaser.Scene {
     this.velocityY = powered ? -POWERED_JUMP_SPEED : -NORMAL_JUMP_SPEED;
     this.jumps += 1;
     this.ayla.setTexture(powered ? 'ayla-powered' : 'ayla-jump').setScale(powered ? 0.15 : 0.14);
-    this.jumpText.setText(`${this.jumps} / ${JUMP_TARGET}`);
+    this.jumpText.setText(`Jumps  ${this.jumps} / ${JUMP_TARGET}`);
     this.tweens.add({ targets: this.jumpText, scale: 1.22, duration: 100, yoyo: true, ease: 'Back.Out' });
     this.celebrateJumpMilestone();
     this.updatePowerText();
@@ -236,7 +250,7 @@ export class JumpPartyScene extends Phaser.Scene {
     this.tweens.add({ targets: effect, scale: 0.16, alpha: 0, angle: 20, duration: 420, onComplete: () => effect.destroy() });
     balloon.destroy();
     this.balloonsPopped += 1;
-    this.balloonText.setText(`${this.balloonsPopped} / ${BALLOON_TARGET}`);
+    this.balloonText.setText(`Balloons  ${this.balloonsPopped} / ${BALLOON_TARGET}`);
     this.checkCompletion();
     this.time.delayedCall(1800, () => {
       if (!this.completed) this.spawnBalloon(config, true);
@@ -247,10 +261,11 @@ export class JumpPartyScene extends Phaser.Scene {
     this.tweens.killTweensOf(sprite);
     this.tweens.add({ targets: sprite, y: sprite.y - 90, scale: sprite.scale * 1.35, alpha: 0, angle: 15, duration: 420, ease: 'Back.In', onComplete: () => sprite.destroy() });
     this.sparkles(sprite.x, sprite.y);
-    if (config.type === 'cake') {
+    if (config.type === 'cake' || config.type === 'party-bag') {
       this.poweredJumps = 2;
       this.updatePowerText();
-    } else {
+    }
+    if (config.type === 'party-bag') {
       this.bagsCollected += 1;
     }
     this.time.delayedCall(config.type === 'cake' ? 6500 : 4500, () => {
@@ -337,6 +352,8 @@ export class JumpPartyScene extends Phaser.Scene {
     const message = document.querySelector<HTMLElement>('#motion-permission-message');
     const result = await this.motionInput?.enable() ?? 'unsupported';
     if (result === 'enabled') {
+      this.motionEnabled = true;
+      this.tapHint.setVisible(false);
       prompt?.setAttribute('hidden', '');
       return;
     }
@@ -380,7 +397,7 @@ export class JumpPartyScene extends Phaser.Scene {
   }
 
   private counterStyle(): Phaser.Types.GameObjects.Text.TextStyle {
-    return { fontFamily: 'ui-rounded, system-ui', fontSize: '31px', color: '#243d69', fontStyle: 'bold', stroke: '#ffffff', strokeThickness: 5 };
+    return { fontFamily: 'ui-rounded, system-ui', fontSize: '28px', color: '#31245f', fontStyle: 'bold', stroke: '#ffffff', strokeThickness: 6 };
   }
 
   private resize(gameSize: Phaser.Structs.Size): void {
@@ -390,7 +407,7 @@ export class JumpPartyScene extends Phaser.Scene {
 
   private resetState(): void {
     this.velocityY = 0; this.onGround = true; this.leftDown = false; this.rightDown = false; this.completed = false;
-    this.jumps = 0; this.balloonsPopped = 0; this.bagsCollected = 0; this.poweredJumps = 0;
+    this.jumps = 0; this.balloonsPopped = 0; this.bagsCollected = 0; this.poweredJumps = 0; this.motionEnabled = false;
     this.balloons = []; this.collectibles = []; this.puddles = [];
   }
 
