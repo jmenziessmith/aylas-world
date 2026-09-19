@@ -3,16 +3,28 @@
   background: #75c8ef;
   color: #142f3d;
   touch-action: none;
+  --app-width: 100vw;
+  --app-height: 100dvh;
 }
 
 * { box-sizing: border-box; }
-html, body, #game { width: 100%; height: 100%; height: 100dvh; margin: 0; overflow: hidden; }
+html, body { width: 100%; height: var(--app-height); margin: 0; overflow: hidden; }
+#game { width: var(--app-width); height: var(--app-height); margin: 0; overflow: hidden; }
 body { position: fixed; inset: 0; overscroll-behavior: none; background: #75c8ef; }
 canvas { display: block; width: 100% !important; height: 100% !important; touch-action: none; }
 
 #ios-help { position: fixed; left: max(12px, env(safe-area-inset-left)); right: max(12px, env(safe-area-inset-right)); bottom: max(12px, env(safe-area-inset-bottom)); z-index: 300; display: flex; align-items: center; justify-content: center; gap: 16px; padding: 12px 18px; border: 3px solid #fff; border-radius: 18px; background: #263a52ed; color: #fff; font-size: 16px; font-weight: 650; text-align: center; box-shadow: 0 8px 24px #1238; touch-action: manipulation; }
 #ios-help[hidden] { display: none; }
 #ios-help button { flex: 0 0 auto; border: 0; border-radius: 13px; padding: 10px 15px; background: #ffd65a; color: #463849; font: inherit; font-weight: 800; }
+#motion-permission { position: fixed; inset: 0; z-index: 350; display: grid; place-items: center; padding: max(20px, env(safe-area-inset-top)) max(20px, env(safe-area-inset-right)) max(20px, env(safe-area-inset-bottom)) max(20px, env(safe-area-inset-left)); background: #18394899; touch-action: manipulation; }
+#motion-permission[hidden] { display: none; }
+.permission-card { width: min(480px, 92vw); padding: 22px 28px; border: 6px solid #fff; border-radius: 28px; background: #fff8dc; color: #304f60; text-align: center; box-shadow: 0 16px 45px #1238; }
+.permission-icon { font-size: 44px; }
+.permission-card strong { display: block; color: #8b3d79; font-size: 29px; }
+.permission-card p { margin: 10px 0 18px; font-size: 18px; line-height: 1.35; }
+.permission-actions { display: flex; justify-content: center; gap: 12px; }
+.permission-actions button { border: 0; border-radius: 15px; padding: 12px 19px; background: #66c88a; color: #183e3a; font: inherit; font-size: 18px; font-weight: 800; }
+.permission-actions button:last-child { background: #d9edf2; }
 #fullscreen-toggle[hidden] { display: none !important; }
 
 #fullscreen-toggle {

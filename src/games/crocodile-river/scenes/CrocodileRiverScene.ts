@@ -60,6 +60,7 @@ export class CrocodileRiverScene extends Phaser.Scene {
     this.createTargets();
     this.createItems();
     this.createPlayer();
+    this.createMenuButton();
 
     this.cameras.main.startFollow(this.player, true, 0.09, 0.09);
     this.scale.on(Phaser.Scale.Events.RESIZE, this.resize, this);
@@ -188,6 +189,18 @@ export class CrocodileRiverScene extends Phaser.Scene {
     this.ayla = this.add.image(0, 0, 'ayla').setOrigin(0.5, 0.88).setScale(0.135);
     this.player = this.add.container(level.start.x, level.start.y, [shadow, this.ayla]).setDepth(20);
     this.startIdle();
+  }
+
+  private createMenuButton(): void {
+    const button = this.add.text(1170, 42, '‹ Games', {
+      fontFamily: 'ui-rounded, system-ui, sans-serif',
+      fontSize: '24px',
+      color: '#24495b',
+      fontStyle: 'bold',
+      backgroundColor: '#ffffffdd',
+      padding: { x: 15, y: 10 }
+    }).setOrigin(0.5).setScrollFactor(0).setDepth(90).setInteractive({ cursor: 'pointer' });
+    button.on(Phaser.Input.Events.POINTER_DOWN, () => { window.location.href = import.meta.env.BASE_URL; });
   }
 
   private showBriefing(): void {

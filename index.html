@@ -31,6 +31,17 @@
       <span>For full screen: tap <strong>Share</strong>, then <strong>Add to Home Screen</strong>.</span>
       <button id="dismiss-ios-help" type="button">Got it</button>
     </aside>
+    <aside id="motion-permission" hidden>
+      <div class="permission-card">
+        <div class="permission-icon">📱✨</div>
+        <strong>Jump with your phone?</strong>
+        <p id="motion-permission-message">Allow motion access, then jump while holding your phone to make Ayla jump.</p>
+        <div class="permission-actions">
+          <button id="allow-motion" type="button">Allow motion</button>
+          <button id="skip-motion" type="button">Not now</button>
+        </div>
+      </div>
+    </aside>
     <button id="fullscreen-toggle" type="button" aria-label="Toggle full screen">⛶</button>
     <div id="rotate-message" aria-hidden="true"><div class="rotate-card">↻</div></div>
     <script type="module" src="/src/main.ts"></script>

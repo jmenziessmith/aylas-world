@@ -7,6 +7,14 @@ const selectedGame = new URLSearchParams(window.location.search).get('game');
 const scene = selectedGame === 'jump-party' ? JumpPartyScene : selectedGame === 'crocodile-river' ? CrocodileRiverScene : undefined;
 let game: Phaser.Game | undefined;
 
+const syncVisualViewport = (): void => {
+  const width = Math.round(window.visualViewport?.width ?? window.innerWidth);
+  const height = Math.round(window.visualViewport?.height ?? window.innerHeight);
+  document.documentElement.style.setProperty('--app-width', `${width}px`);
+  document.documentElement.style.setProperty('--app-height', `${height}px`);
+  game?.scale.resize(width, height);
+};
+
 if (scene) {
   document.body.classList.add('playing');
   document.querySelector('#launcher')?.setAttribute('hidden', '');
@@ -37,6 +45,7 @@ if (scene) {
   },
     scene: [scene]
   });
+  syncVisualViewport();
 }
 
 window.addEventListener('beforeunload', () => game?.destroy(true));
@@ -67,4 +76,13 @@ const toggleFullscreen = async (): Promise<void> => {
 fullscreenButton?.addEventListener('click', () => void toggleFullscreen());
 document.querySelector('#dismiss-ios-help')?.addEventListener('click', () => {
   document.querySelector('#ios-help')?.setAttribute('hidden', '');
+});
+
+window.visualViewport?.addEventListener('resize', syncVisualViewport);
+window.addEventListener('resize', syncVisualViewport);
+window.addEventListener('pageshow', syncVisualViewport);
+window.addEventListener('orientationchange', () => {
+  syncVisualViewport();
+  window.setTimeout(syncVisualViewport, 180);
+  window.setTimeout(syncVisualViewport, 600);
 });

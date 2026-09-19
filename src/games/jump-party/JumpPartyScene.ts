@@ -30,6 +30,7 @@ export class JumpPartyScene extends Phaser.Scene {
   private collectibles: Array<{ config: PartyObject; sprite: Phaser.GameObjects.Image }> = [];
   private puddles: Array<{ config: PartyObject; sprite: Phaser.GameObjects.Image; ready: boolean }> = [];
   private motionInput?: MotionJumpInput;
+  private motionPermissionButton?: HTMLButtonElement;
 
   constructor() { super('jump-party'); }
 
@@ -42,7 +43,7 @@ export class JumpPartyScene extends Phaser.Scene {
 
   create(): void {
     this.resetState();
-    this.cameras.main.setBackgroundColor('#76cef5').setBounds(0, 0, jumpPartyLevel.worldWidth, BASE_HEIGHT);
+    this.cameras.main.setBackgroundColor('#76cef5');
     this.createScenery();
     this.createObjects();
     this.createPlayer();
@@ -54,6 +55,7 @@ export class JumpPartyScene extends Phaser.Scene {
     this.input.on(Phaser.Input.Events.POINTER_DOWN, this.handleScreenTap, this);
     this.scale.on(Phaser.Scale.Events.RESIZE, this.resize, this);
     this.motionInput = new MotionJumpInput(() => this.tryJump());
+    this.setupMotionPermissionPrompt();
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, this.shutdown, this);
     this.resize(this.scale.gameSize);
   }
@@ -85,18 +87,43 @@ export class JumpPartyScene extends Phaser.Scene {
   private createObjects(): void {
     jumpPartyLevel.objects.forEach((config) => {
       if (config.type === 'balloon') {
-        const balloon = this.add.image(config.x, config.y, `balloon-${config.colour}`).setScale(0.115).setDepth(8);
-        balloon.setData('id', config.id);
-        this.balloons.push(balloon);
-        this.tweens.add({ targets: balloon, y: config.y - (config.bobHeight ?? 15), angle: Phaser.Math.Between(-2, 2), duration: config.bobDuration ?? 1700, yoyo: true, repeat: -1, ease: 'Sine.InOut', delay: Phaser.Math.Between(0, 600) });
+        this.spawnBalloon(config);
       } else if (config.type === 'puddle') {
         const sprite = this.add.image(config.x, config.y, 'puddle').setScale(0.28).setDepth(2);
         this.puddles.push({ config, sprite, ready: true });
       } else {
-        const sprite = this.add.image(config.x, config.y, config.type).setScale(config.type === 'cake' ? 0.105 : 0.11).setDepth(7);
-        this.collectibles.push({ config, sprite });
-        this.tweens.add({ targets: sprite, y: config.y - 8, duration: 900, yoyo: true, repeat: -1, ease: 'Sine.InOut' });
+        this.spawnCollectible(config);
       }
+    });
+  }
+
+  private spawnBalloon(config: PartyObject, floatIn = false): void {
+    const balloon = this.add.image(config.x, floatIn ? BASE_HEIGHT + 100 : config.y, `balloon-${config.colour}`)
+      .setScale(0.115).setDepth(8);
+    balloon.setData('config', config);
+    this.balloons.push(balloon);
+    const startBobbing = (): void => {
+      this.tweens.add({ targets: balloon, y: config.y - (config.bobHeight ?? 15), angle: Phaser.Math.Between(-2, 2), duration: config.bobDuration ?? 1700, yoyo: true, repeat: -1, ease: 'Sine.InOut', delay: Phaser.Math.Between(0, 600) });
+    };
+    if (floatIn) {
+      this.tweens.add({ targets: balloon, y: config.y, duration: 900, ease: 'Back.Out', onComplete: startBobbing });
+    } else {
+      startBobbing();
+    }
+  }
+
+  private spawnCollectible(config: PartyObject): void {
+    const sprite = this.add.image(config.x, config.y + 35, config.type)
+      .setScale(0).setDepth(7);
+    this.collectibles.push({ config, sprite });
+    const targetScale = config.type === 'cake' ? 0.105 : 0.11;
+    this.tweens.add({
+      targets: sprite,
+      y: config.y,
+      scale: targetScale,
+      duration: 420,
+      ease: 'Back.Out',
+      onComplete: () => this.tweens.add({ targets: sprite, y: config.y - 8, duration: 900, yoyo: true, repeat: -1, ease: 'Sine.InOut' })
     });
   }
 
@@ -108,23 +135,23 @@ export class JumpPartyScene extends Phaser.Scene {
   }
 
   private createHud(): void {
-    this.add.rectangle(190, 57, 340, 82, 0xffffff, 0.9).setStrokeStyle(4, 0x70ccea).setScrollFactor(0).setDepth(99);
-    this.add.rectangle(1085, 57, 350, 82, 0xffffff, 0.9).setStrokeStyle(4, 0xf18ab4).setScrollFactor(0).setDepth(99);
-    this.add.image(28, 25, 'hud-jumps').setOrigin(0).setDisplaySize(185, 62).setScrollFactor(0).setDepth(100);
-    this.jumpText = this.add.text(220, 56, `0 / ${JUMP_TARGET}`, this.counterStyle()).setOrigin(0, 0.5).setScrollFactor(0).setDepth(101);
-    this.add.image(915, 25, 'hud-balloons').setOrigin(0).setDisplaySize(205, 62).setScrollFactor(0).setDepth(100);
-    this.balloonText = this.add.text(1125, 56, `0 / ${BALLOON_TARGET}`, this.counterStyle()).setOrigin(0, 0.5).setScrollFactor(0).setDepth(101);
-    this.powerText = this.add.text(640, 112, '', { fontFamily: 'ui-rounded, system-ui', fontSize: '28px', color: '#7b287d', fontStyle: 'bold', stroke: '#ffffff', strokeThickness: 6 }).setOrigin(0.5).setScrollFactor(0).setDepth(101);
-    this.cheerText = this.add.text(640, 158, 'Let’s jump!', { fontFamily: 'ui-rounded, system-ui', fontSize: '30px', color: '#7b287d', fontStyle: 'bold', stroke: '#ffffff', strokeThickness: 7 }).setOrigin(0.5).setScrollFactor(0).setDepth(101);
+    this.add.rectangle(190, 57, 340, 82, 0xffffff, 0.9).setStrokeStyle(4, 0x70ccea).setDepth(99);
+    this.add.rectangle(1085, 57, 350, 82, 0xffffff, 0.9).setStrokeStyle(4, 0xf18ab4).setDepth(99);
+    this.add.image(28, 25, 'hud-jumps').setOrigin(0).setDisplaySize(185, 62).setDepth(100);
+    this.jumpText = this.add.text(220, 56, `0 / ${JUMP_TARGET}`, this.counterStyle()).setOrigin(0, 0.5).setDepth(101);
+    this.add.image(915, 25, 'hud-balloons').setOrigin(0).setDisplaySize(205, 62).setDepth(100);
+    this.balloonText = this.add.text(1125, 56, `0 / ${BALLOON_TARGET}`, this.counterStyle()).setOrigin(0, 0.5).setDepth(101);
+    this.powerText = this.add.text(640, 112, '', { fontFamily: 'ui-rounded, system-ui', fontSize: '28px', color: '#7b287d', fontStyle: 'bold', stroke: '#ffffff', strokeThickness: 6 }).setOrigin(0.5).setDepth(101);
+    this.cheerText = this.add.text(640, 158, 'Let’s jump!', { fontFamily: 'ui-rounded, system-ui', fontSize: '30px', color: '#7b287d', fontStyle: 'bold', stroke: '#ffffff', strokeThickness: 7 }).setOrigin(0.5).setDepth(101);
     this.tweens.add({ targets: this.cheerText, scale: 1.08, duration: 650, yoyo: true, repeat: 1, ease: 'Sine.InOut' });
   }
 
   private createControls(): void {
     this.makeHoldButton(92, 610, '◀', (down) => { this.leftDown = down; });
     this.makeHoldButton(1188, 610, '▶', (down) => { this.rightDown = down; });
-    this.add.text(640, 665, 'TAP ANYWHERE TO JUMP', { fontFamily: 'ui-rounded, system-ui', fontSize: '22px', color: '#493453', fontStyle: 'bold', stroke: '#ffffff', strokeThickness: 5 }).setOrigin(0.5).setScrollFactor(0).setDepth(109);
+    this.add.text(640, 665, 'TAP ANYWHERE TO JUMP', { fontFamily: 'ui-rounded, system-ui', fontSize: '22px', color: '#493453', fontStyle: 'bold', stroke: '#ffffff', strokeThickness: 5 }).setOrigin(0.5).setDepth(109);
 
-    const motion = this.add.text(640, 62, '📱 Enable motion jump', { fontFamily: 'ui-rounded, system-ui', fontSize: '21px', color: '#24495b', backgroundColor: '#ffffffdd', padding: { x: 15, y: 9 } }).setOrigin(0.5).setScrollFactor(0).setDepth(110).setInteractive({ cursor: 'pointer' });
+    const motion = this.add.text(640, 62, '📱 Enable motion jump', { fontFamily: 'ui-rounded, system-ui', fontSize: '21px', color: '#24495b', backgroundColor: '#ffffffdd', padding: { x: 15, y: 9 } }).setOrigin(0.5).setDepth(110).setInteractive({ cursor: 'pointer' });
     motion.on('pointerdown', async () => {
       const result = await this.motionInput?.enable() ?? 'unsupported';
       const status = result === 'enabled' ? '✓ Motion jump on'
@@ -134,6 +161,9 @@ export class JumpPartyScene extends Phaser.Scene {
       motion.setText(status);
       motion.disableInteractive();
     });
+
+    const games = this.add.text(835, 57, '‹ Games', { fontFamily: 'ui-rounded, system-ui', fontSize: '20px', color: '#24495b', fontStyle: 'bold', backgroundColor: '#ffffffee', padding: { x: 13, y: 10 } }).setOrigin(0.5).setDepth(110).setInteractive({ cursor: 'pointer' });
+    games.on(Phaser.Input.Events.POINTER_DOWN, () => { window.location.href = import.meta.env.BASE_URL; });
   }
 
   private handleScreenTap(_pointer: Phaser.Input.Pointer, currentlyOver: Phaser.GameObjects.GameObject[]): void {
@@ -141,8 +171,8 @@ export class JumpPartyScene extends Phaser.Scene {
   }
 
   private makeHoldButton(x: number, y: number, label: string, set: (down: boolean) => void): void {
-    const button = this.add.circle(x, y, 61, 0xffffff, 0.86).setStrokeStyle(6, 0x4fb7d6).setScrollFactor(0).setDepth(110).setInteractive({ cursor: 'pointer' });
-    this.add.text(x, y, label, { fontFamily: 'system-ui', fontSize: '49px', color: '#23667d', fontStyle: 'bold' }).setOrigin(0.5).setScrollFactor(0).setDepth(111);
+    const button = this.add.circle(x, y, 61, 0xffffff, 0.86).setStrokeStyle(6, 0x4fb7d6).setDepth(110).setInteractive({ cursor: 'pointer' });
+    this.add.text(x, y, label, { fontFamily: 'system-ui', fontSize: '49px', color: '#23667d', fontStyle: 'bold' }).setOrigin(0.5).setDepth(111);
     button.on('pointerdown', () => { set(true); button.setScale(0.92); });
     ['pointerup', 'pointerout'].forEach((event) => button.on(event, () => { set(false); button.setScale(1); }));
   }
@@ -200,6 +230,7 @@ export class JumpPartyScene extends Phaser.Scene {
   }
 
   private popBalloon(balloon: Phaser.GameObjects.Image): void {
+    const config = balloon.getData('config') as PartyObject;
     this.tweens.killTweensOf(balloon);
     const effect = this.add.image(balloon.x, balloon.y, 'balloon-pop').setScale(0.02).setDepth(30);
     this.tweens.add({ targets: effect, scale: 0.16, alpha: 0, angle: 20, duration: 420, onComplete: () => effect.destroy() });
@@ -207,6 +238,9 @@ export class JumpPartyScene extends Phaser.Scene {
     this.balloonsPopped += 1;
     this.balloonText.setText(`${this.balloonsPopped} / ${BALLOON_TARGET}`);
     this.checkCompletion();
+    this.time.delayedCall(1800, () => {
+      if (!this.completed) this.spawnBalloon(config, true);
+    });
   }
 
   private collect(config: PartyObject, sprite: Phaser.GameObjects.Image): void {
@@ -219,6 +253,9 @@ export class JumpPartyScene extends Phaser.Scene {
     } else {
       this.bagsCollected += 1;
     }
+    this.time.delayedCall(config.type === 'cake' ? 6500 : 4500, () => {
+      if (!this.completed) this.spawnCollectible(config);
+    });
   }
 
   private splash(puddle: { config: PartyObject; sprite: Phaser.GameObjects.Image; ready: boolean }): void {
@@ -275,6 +312,46 @@ export class JumpPartyScene extends Phaser.Scene {
     this.powerText.setText(this.poweredJumps > 0 ? `✨ ${this.poweredJumps} SUPER JUMPS! ✨` : '');
   }
 
+  private setupMotionPermissionPrompt(): void {
+    const prompt = document.querySelector<HTMLElement>('#motion-permission');
+    const button = document.querySelector<HTMLButtonElement>('#allow-motion');
+    const skip = document.querySelector<HTMLButtonElement>('#skip-motion');
+    const message = document.querySelector<HTMLElement>('#motion-permission-message');
+    if (!prompt || !button || !skip || !message || !this.motionInput?.supported) return;
+
+    if (!window.isSecureContext) {
+      message.textContent = 'Motion jumping needs a secure HTTPS connection. You can still tap anywhere to jump.';
+      button.hidden = true;
+      prompt.removeAttribute('hidden');
+      return;
+    }
+
+    this.motionPermissionButton = button;
+    prompt.removeAttribute('hidden');
+    button.addEventListener('click', this.requestMotionPermission);
+    skip.addEventListener('click', this.dismissMotionPermission);
+  }
+
+  private readonly requestMotionPermission = async (): Promise<void> => {
+    const prompt = document.querySelector<HTMLElement>('#motion-permission');
+    const message = document.querySelector<HTMLElement>('#motion-permission-message');
+    const result = await this.motionInput?.enable() ?? 'unsupported';
+    if (result === 'enabled') {
+      prompt?.setAttribute('hidden', '');
+      return;
+    }
+    if (message) {
+      message.textContent = result === 'denied'
+        ? 'Motion access was denied. On iPhone, check Settings › Safari › Motion & Orientation Access, then reload this page.'
+        : 'Motion is unavailable on this device. You can still tap anywhere to jump.';
+    }
+    if (this.motionPermissionButton) this.motionPermissionButton.textContent = 'Try again';
+  };
+
+  private readonly dismissMotionPermission = (): void => {
+    document.querySelector('#motion-permission')?.setAttribute('hidden', '');
+  };
+
   private celebrateJumpMilestone(): void {
     const messages: Record<number, string> = {
       5: 'Great jumping!',
@@ -307,10 +384,8 @@ export class JumpPartyScene extends Phaser.Scene {
   }
 
   private resize(gameSize: Phaser.Structs.Size): void {
-    const zoom = gameSize.height / BASE_HEIGHT;
-    const visibleWidth = gameSize.width / zoom;
+    const zoom = Math.min(gameSize.width / 1280, gameSize.height / BASE_HEIGHT);
     this.cameras.main.setViewport(0, 0, gameSize.width, gameSize.height).setZoom(zoom).centerOn(640, BASE_HEIGHT / 2);
-    if (visibleWidth < 1280) this.cameras.main.setZoom(gameSize.width / 1280);
   }
 
   private resetState(): void {
@@ -325,5 +400,8 @@ export class JumpPartyScene extends Phaser.Scene {
     this.input.keyboard?.off('keydown-W', this.tryJump, this);
     this.input.off(Phaser.Input.Events.POINTER_DOWN, this.handleScreenTap, this);
     this.motionInput?.destroy();
+    this.motionPermissionButton?.removeEventListener('click', this.requestMotionPermission);
+    document.querySelector<HTMLButtonElement>('#skip-motion')?.removeEventListener('click', this.dismissMotionPermission);
+    document.querySelector('#motion-permission')?.setAttribute('hidden', '');
   }
 }
