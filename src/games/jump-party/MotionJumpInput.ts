@@ -24,19 +24,26 @@ export class MotionJumpInput {
         const permission = await MotionEvent.requestPermission();
         if (permission !== 'granted') return 'denied';
       }
-      if (!this.listening) {
-        window.addEventListener('devicemotion', this.handleMotion);
-        this.listening = true;
-      }
+      this.startListening();
       return 'enabled';
     } catch {
       return 'denied';
     }
   }
 
+  enablePreviouslyGranted(): void {
+    if (this.supported && window.isSecureContext) this.startListening();
+  }
+
   destroy(): void {
     window.removeEventListener('devicemotion', this.handleMotion);
     this.listening = false;
+  }
+
+  private startListening(): void {
+    if (this.listening) return;
+    window.addEventListener('devicemotion', this.handleMotion);
+    this.listening = true;
   }
 
   private readonly handleMotion = (event: DeviceMotionEvent): void => {

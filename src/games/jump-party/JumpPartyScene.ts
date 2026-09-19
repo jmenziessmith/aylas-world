@@ -8,6 +8,7 @@ const NORMAL_JUMP_SPEED = 1000;
 const POWERED_JUMP_SPEED = 1550;
 const GRAVITY = 4000;
 const MOVE_SPEED = 360;
+const MOTION_PERMISSION_STORAGE_KEY = 'aylas-world-motion-granted';
 
 export class JumpPartyScene extends Phaser.Scene {
   private player!: Phaser.GameObjects.Container;
@@ -351,6 +352,13 @@ export class JumpPartyScene extends Phaser.Scene {
       return;
     }
 
+    if (localStorage.getItem(MOTION_PERMISSION_STORAGE_KEY) === 'yes') {
+      this.motionInput.enablePreviouslyGranted();
+      this.motionEnabled = true;
+      this.tapHint.setVisible(false);
+      return;
+    }
+
     this.motionPermissionButton = button;
     prompt.removeAttribute('hidden');
     button.addEventListener('click', this.requestMotionPermission);
@@ -362,6 +370,7 @@ export class JumpPartyScene extends Phaser.Scene {
     const message = document.querySelector<HTMLElement>('#motion-permission-message');
     const result = await this.motionInput?.enable() ?? 'unsupported';
     if (result === 'enabled') {
+      localStorage.setItem(MOTION_PERMISSION_STORAGE_KEY, 'yes');
       this.motionEnabled = true;
       this.tapHint.setVisible(false);
       prompt?.setAttribute('hidden', '');
@@ -372,6 +381,7 @@ export class JumpPartyScene extends Phaser.Scene {
         ? 'Motion access was denied. On iPhone, check Settings › Safari › Motion & Orientation Access, then reload this page.'
         : 'Motion is unavailable on this device. You can still tap anywhere to jump.';
     }
+    if (result === 'denied') localStorage.removeItem(MOTION_PERMISSION_STORAGE_KEY);
     if (this.motionPermissionButton) this.motionPermissionButton.textContent = 'Try again';
   };
 
