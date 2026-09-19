@@ -27,6 +27,7 @@ export class CrocodileRiverScene extends Phaser.Scene {
   private carriedItemId?: string;
   private missionOrder: RetrievalItem[] = [];
   private targetSprites = new Map<string, Phaser.GameObjects.Image>();
+  private movingLogs = new Map<string, { sprite: Phaser.GameObjects.Image; landingOffset: number }>();
   private itemSprites = new Map<string, Phaser.GameObjects.Image>();
 
   constructor() {
@@ -71,6 +72,17 @@ export class CrocodileRiverScene extends Phaser.Scene {
 
   update(_time: number, delta: number): void {
     this.water.tilePositionX += delta * 0.012;
+    const safeLog = this.movingLogs.get(this.previousSafe.id);
+    if (safeLog) {
+      this.previousSafe.x = safeLog.sprite.x;
+      this.previousSafe.y = safeLog.sprite.y - safeLog.landingOffset;
+    }
+    const currentLog = this.movingLogs.get(this.current.id);
+    if (!this.moving && currentLog) {
+      this.current.x = currentLog.sprite.x;
+      this.current.y = currentLog.sprite.y - currentLog.landingOffset;
+      this.player.setPosition(this.current.x, this.current.y);
+    }
   }
 
   private createBackground(): void {
@@ -131,6 +143,7 @@ export class CrocodileRiverScene extends Phaser.Scene {
           ease: 'Sine.InOut'
         });
       } else if (target.kind === 'log') {
+        this.movingLogs.set(target.id, { sprite, landingOffset });
         this.tweens.add({
           targets: sprite,
           x: target.x + 18,
@@ -366,6 +379,7 @@ export class CrocodileRiverScene extends Phaser.Scene {
     this.carriedItem = undefined;
     this.carriedItemId = undefined;
     this.targetSprites.clear();
+    this.movingLogs.clear();
     this.itemSprites.clear();
     this.missionOrder = Phaser.Utils.Array.Shuffle([...level.items]);
   }
