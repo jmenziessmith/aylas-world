@@ -10,15 +10,12 @@ type Landing = {
 };
 
 const BASE_HEIGHT = 720;
-const BACKGROUND_WIDTH = 2172;
-const BACKGROUND_HEIGHT = 724;
 const ASSETS = `${import.meta.env.BASE_URL}assets`;
 
 export class CrocodileRiverScene extends Phaser.Scene {
   private player!: Phaser.GameObjects.Container;
   private ayla!: Phaser.GameObjects.Image;
-  private background!: Phaser.GameObjects.Image;
-  private backgroundTravel = 0;
+  private backgroundElement?: HTMLElement;
   private cameraTravel = 1;
   private current: Landing = { id: 'start', ...level.start, kind: 'bank' };
   private previousSafe: Landing = this.current;
@@ -28,6 +25,7 @@ export class CrocodileRiverScene extends Phaser.Scene {
   private missionIndex = 0;
   private carriedItem?: Phaser.GameObjects.Image;
   private carriedItemId?: string;
+  private gamesButton!: Phaser.GameObjects.Text;
   private missionOrder: RetrievalItem[] = [];
   private targetSprites = new Map<string, Phaser.GameObjects.Image>();
   private movingLogs = new Map<string, { sprite: Phaser.GameObjects.Image; landingOffset: number }>();
@@ -39,12 +37,12 @@ export class CrocodileRiverScene extends Phaser.Scene {
 
   preload(): void {
     this.load.image('ayla', `${ASSETS}/character/ayla.webp`);
+    this.load.image('ayla-jump', `${ASSETS}/character/ayla-jump.png`);
     this.load.image('rock', `${ASSETS}/river/rock.webp`);
     this.load.image('log', `${ASSETS}/river/log.png`);
     this.load.image('crocodile', `${ASSETS}/river/crocodile.webp`);
     this.load.image('start-bank', `${ASSETS}/river/start-bank.webp`);
     this.load.image('far-bank', `${ASSETS}/river/far-bank.webp`);
-    this.load.image('background', `${ASSETS}/background/river-panorama.png`);
     this.load.image('bicycle', `${ASSETS}/props/bicycle.webp`);
     this.load.image('teddy', `${ASSETS}/props/teddy.webp`);
     this.load.image('ball', `${ASSETS}/props/ball.webp`);
@@ -56,7 +54,7 @@ export class CrocodileRiverScene extends Phaser.Scene {
     document.querySelector('#game-loader')?.setAttribute('hidden', '');
     this.resetState();
     this.input.mouse?.disableContextMenu();
-    this.cameras.main.setBackgroundColor('#89d6f5').setBounds(0, 0, level.worldWidth, BASE_HEIGHT);
+    this.cameras.main.setBackgroundColor('rgba(0,0,0,0)').setBounds(0, 0, level.worldWidth, BASE_HEIGHT);
     this.createBackground();
     this.createBanks();
     this.createTargets();
@@ -68,6 +66,7 @@ export class CrocodileRiverScene extends Phaser.Scene {
     this.scale.on(Phaser.Scale.Events.RESIZE, this.resize, this);
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
       this.scale.off(Phaser.Scale.Events.RESIZE, this.resize, this);
+      this.backgroundElement?.style.removeProperty('background');
     });
     this.resize(this.scale.gameSize);
     this.showBriefing();
@@ -76,10 +75,7 @@ export class CrocodileRiverScene extends Phaser.Scene {
   update(): void {
     const camera = this.cameras.main;
     const progress = Phaser.Math.Clamp(camera.scrollX / this.cameraTravel, 0, 1);
-    this.background.setPosition(
-      camera.scrollX - this.backgroundTravel * progress,
-      camera.scrollY
-    );
+    if (this.backgroundElement) this.backgroundElement.style.backgroundPosition = `${progress * 100}% top`;
     const safeLog = this.movingLogs.get(this.previousSafe.id);
     if (safeLog) {
       this.previousSafe.x = safeLog.sprite.x;
@@ -94,9 +90,9 @@ export class CrocodileRiverScene extends Phaser.Scene {
   }
 
   private createBackground(): void {
-    this.background = this.add.image(0, 0, 'background')
-      .setOrigin(0)
-      .setDepth(-30);
+    this.backgroundElement = document.querySelector<HTMLElement>('#game') ?? undefined;
+    if (!this.backgroundElement) return;
+    this.backgroundElement.style.background = `url("${ASSETS}/background/river-panorama.png") left top / cover no-repeat`;
   }
 
   private createBanks(): void {
@@ -104,7 +100,13 @@ export class CrocodileRiverScene extends Phaser.Scene {
     const end = { id: 'far-bank', ...level.farBank, kind: 'bank' as const };
     const startBank = this.add.image(215, 510, 'start-bank').setScale(0.48).setDepth(3);
     const farBank = this.add.image(level.worldWidth - 245, 505, 'far-bank').setScale(0.47).setDepth(3);
-    this.add.image(185, 450, 'bicycle').setScale(0.2).setDepth(10);
+    const bicycle = this.add.image(185, 450, 'bicycle')
+      .setScale(0.2)
+      .setDepth(10)
+      .setInteractive({ cursor: 'pointer' });
+    bicycle.on(Phaser.Input.Events.POINTER_DOWN, () => {
+      if (!this.briefing && !this.moving) this.showBriefing();
+    });
 
     this.makeInteractive(startBank, start);
     this.makeInteractive(farBank, end);
@@ -113,18 +115,40 @@ export class CrocodileRiverScene extends Phaser.Scene {
   }
 
   private createTargets(): void {
-    level.targets.forEach((authoredTarget) => {
-      const target = {
+    const placed: Array<{ x: number; y: number }> = [];
+    const targets = level.targets.map((authoredTarget, index) => {
+      const minimumY = 445;
+      const maximumY = authoredTarget.kind === 'crocodile' ? 650 : 665;
+      const x = authoredTarget.x + Phaser.Math.Between(-20, 20);
+      let y = minimumY;
+      let foundSpace = false;
+      for (let attempt = 0; attempt < 20; attempt += 1) {
+        y = Phaser.Math.Between(minimumY, maximumY);
+        foundSpace = placed.every((other) => Math.abs(x - other.x) >= 330 || Math.abs(y - other.y) >= 145);
+        if (foundSpace) break;
+      }
+      if (!foundSpace) y = index % 2 === 0 ? minimumY + 15 : maximumY - 15;
+      placed.push({ x, y });
+      return {
         ...authoredTarget,
-        x: authoredTarget.x + Phaser.Math.Between(-20, 20),
-        y: authoredTarget.y + Phaser.Math.Between(-24, 24)
+        x,
+        y,
+        minimumY,
+        maximumY
       };
-      this.add.ellipse(target.x, target.y + 22, 130, 34, 0x174d63, 0.18).setDepth(4);
+    });
+
+    targets.forEach((target) => {
+      const { minimumY, maximumY } = target;
+      const perspective = Phaser.Math.Linear(0.82, 1.24, (target.y - minimumY) / (maximumY - minimumY));
+      this.add.ellipse(target.x, target.y + 22, 130, 34, 0x174d63, 0.18)
+        .setScale(perspective)
+        .setDepth(4);
       const sprite = this.add.image(target.x, target.y, target.kind)
-        .setScale(target.scale ?? 0.22)
+        .setScale((target.scale ?? 0.22) * perspective)
         .setDepth(target.kind === 'crocodile' ? 6 : 7);
       this.targetSprites.set(target.id, sprite);
-      const landingOffset = target.kind === 'rock' ? 58 : target.kind === 'log' ? 48 : 38;
+      const landingOffset = (target.kind === 'rock' ? 58 : target.kind === 'log' ? 48 : 38) * perspective;
       this.makeInteractive(sprite, () => ({ ...target, x: sprite.x, y: sprite.y - landingOffset }));
 
       if (target.kind === 'crocodile') {
@@ -187,7 +211,7 @@ export class CrocodileRiverScene extends Phaser.Scene {
   }
 
   private createMenuButton(): void {
-    const button = this.add.text(1170, 42, '‹ Games', {
+    this.gamesButton = this.add.text(1170, 42, '‹ Games', {
       fontFamily: 'ui-rounded, system-ui, sans-serif',
       fontSize: '24px',
       color: '#24495b',
@@ -195,7 +219,7 @@ export class CrocodileRiverScene extends Phaser.Scene {
       backgroundColor: '#ffffffdd',
       padding: { x: 15, y: 10 }
     }).setOrigin(0.5).setScrollFactor(0).setDepth(90).setInteractive({ cursor: 'pointer' });
-    button.on(Phaser.Input.Events.POINTER_DOWN, () => { window.location.href = import.meta.env.BASE_URL; });
+    this.gamesButton.on(Phaser.Input.Events.POINTER_DOWN, () => { window.location.href = import.meta.env.BASE_URL; });
   }
 
   private showBriefing(): void {
@@ -241,7 +265,7 @@ export class CrocodileRiverScene extends Phaser.Scene {
   }
 
   private tryJump(destination: Landing): void {
-    if (this.briefing || this.moving || destination.id === this.current.id) return;
+    if (this.moving || destination.id === this.current.id) return;
     if (Phaser.Math.Distance.BetweenPoints(this.current, destination) > level.maxJumpDistance) return;
     this.jump(destination);
   }
@@ -255,6 +279,7 @@ export class CrocodileRiverScene extends Phaser.Scene {
     const progress = { value: 0 };
 
     this.tweens.killTweensOf(this.ayla);
+    this.ayla.setTexture('ayla-jump').setScale(0.148);
     this.tweens.add({ targets: this.player, scaleX: 0.93, scaleY: 1.07, duration: 90, yoyo: true });
     this.tweens.add({
       targets: progress,
@@ -394,6 +419,8 @@ export class CrocodileRiverScene extends Phaser.Scene {
 
   private bounceBack(crocodile: Landing): void {
     this.moving = true;
+    this.tweens.killTweensOf(this.ayla);
+    this.ayla.setTexture('ayla-jump').setScale(0.148);
     const sprite = this.targetSprites.get(crocodile.id);
     if (sprite) {
       this.tweens.add({ targets: sprite, scaleY: sprite.scaleY * 0.72, angle: -5, duration: 100, yoyo: true });
@@ -416,6 +443,7 @@ export class CrocodileRiverScene extends Phaser.Scene {
         this.player.setPosition(this.previousSafe.x, this.previousSafe.y).setAngle(0);
         this.current = this.previousSafe;
         this.moving = false;
+        this.startIdle();
         this.splash(from.x, from.y + 20);
       }
     });
@@ -437,7 +465,7 @@ export class CrocodileRiverScene extends Phaser.Scene {
 
   private startIdle(): void {
     this.tweens.killTweensOf(this.ayla);
-    this.ayla.setPosition(0, 0).setScale(0.135);
+    this.ayla.setTexture('ayla').setPosition(0, 0).setScale(0.135);
     this.tweens.add({
       targets: this.ayla,
       y: -3,
@@ -456,10 +484,8 @@ export class CrocodileRiverScene extends Phaser.Scene {
     const visibleWorldWidth = gameSize.width / zoom;
     camera.setViewport(0, 0, gameSize.width, gameSize.height).setZoom(zoom);
     camera.setDeadzone(Math.min(220, visibleWorldWidth * 0.18), 220);
+    this.gamesButton?.setX(visibleWorldWidth - 110);
 
-    const backgroundScale = Math.max(BASE_HEIGHT / BACKGROUND_HEIGHT, visibleWorldWidth / BACKGROUND_WIDTH);
-    this.backgroundTravel = Math.max(0, BACKGROUND_WIDTH * backgroundScale - visibleWorldWidth);
     this.cameraTravel = Math.max(1, level.worldWidth - visibleWorldWidth);
-    this.background.setScale(backgroundScale);
   }
 }

@@ -26,7 +26,7 @@ if (scene) {
   game = new Phaser.Game({
   type: Phaser.AUTO,
   parent: 'game',
-  backgroundColor: '#75c8ef',
+  transparent: true,
   width: 1280,
   height: 720,
   render: {

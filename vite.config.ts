@@ -1,5 +1,10 @@
 import { defineConfig } from 'vite';
 
 export default defineConfig({
-  base: './'
+  base: './',
+  server: {
+    watch: {
+      ignored: ['**/assets/generated/**', '**/assets/jumpparty/**']
+    }
+  }
 });
