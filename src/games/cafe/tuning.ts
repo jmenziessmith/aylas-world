@@ -12,6 +12,11 @@ export const CAFE_TUNING = {
   wallRestitution: 0.2,
   spillOverhang: 0.34,
   maxPhysicsStepSeconds: 1 / 30,
+  autoWalk: {
+    // Some Fire tablets provide tilt readings but do not surface reliable walk events.
+    idleBeforeStartingMs: 2_200,
+    intervalMs: 1_500,
+  },
   step: {
     enterAcceleration: 1.25,
     exitAcceleration: 0.55,

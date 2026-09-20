@@ -3,6 +3,7 @@ import { CAFE_ASSETS } from './assets';
 import { CAFE_ITEMS, CAFE_ORDERS, createRound, addItem, validateLoadedOrder, markSpilled, markServed, beginRecovery, removeLoadedItem, type CafeRound, type CafeItemId } from './model';
 import { createTrayBody, stepTrayPhysics, type TrayBody } from './physics';
 import { CafeMotionInput } from './sensors';
+import { CAFE_TUNING } from './tuning';
 import { CAFE_LAYOUT, progressPosition, servingPositions } from './layout';
 
 type Stage = 'INTRO' | 'SELECTING_ITEMS' | 'READY_TO_CARRY' | 'MOTION_PERMISSION' | 'CALIBRATING_TRAY' | 'CARRYING' | 'ARRIVING' | 'SERVING' | 'ROUND_COMPLETE';
@@ -28,6 +29,8 @@ export class CafeScene extends Phaser.Scene {
   private walker?: Art;
   private steps = 0;
   private lastStep = -1000;
+  private lastDetectedStep = -1000;
+  private autoWalkActive = false;
   private nextFoot = 0;
   private stepDots: Art[] = [];
   private footButtons: Phaser.GameObjects.Container[] = [];
@@ -61,7 +64,12 @@ export class CafeScene extends Phaser.Scene {
   create(): void {
     document.querySelector('#game-loader')?.setAttribute('hidden', '');
     this.root = this.add.container(0, 0);
-    this.motion = new CafeMotionInput({ onStep: () => { if (!this.fallback) this.acceptStep(); } });
+    this.motion = new CafeMotionInput({ onStep: () => {
+      if (!this.fallback) {
+        this.lastDetectedStep = this.time.now;
+        this.acceptStep();
+      }
+    } });
     this.customerStartIndex = Phaser.Math.Between(0, 2);
     try { this.motionGranted = localStorage.getItem('aylas-cafe-motion-enabled') === '1'; } catch { /* Motion can still be enabled from its button. */ }
     if (this.motionGranted) this.motion.enablePreviouslyGranted();
@@ -369,7 +377,8 @@ export class CafeScene extends Phaser.Scene {
         return createTrayBody(item.id, item.itemId, pos ? .5 + (pos.x - PREP_TRAY.x) / PREP_TRAY.w : .5 + (i - (items.length - 1) / 2) * .22, pos ? .5 + (pos.y - PREP_TRAY.y) / PREP_TRAY.h : .5);
       });
     }
-    this.stage = 'CARRYING'; this.lastStep = this.time.now; this.render(); this.speak('Walk carefully. Ten steps to your friend!');
+    this.stage = 'CARRYING'; this.lastStep = this.time.now; this.lastDetectedStep = this.time.now; this.autoWalkActive = false;
+    this.render(); this.speak('Walk carefully. Ten steps to your friend!');
   }
 
   private renderCarry(): void {
@@ -402,8 +411,15 @@ export class CafeScene extends Phaser.Scene {
   }
 
   private refreshFeet(): void { this.footButtons.forEach((button, i) => button.setAlpha(i === this.nextFoot ? 1 : .5)); }
-  private acceptStep(): void {
+  private acceptStep(automatic = false): void {
     if (this.stage !== 'CARRYING' || document.hidden || this.time.now - this.lastStep < 300) return;
+    if (automatic && !this.autoWalkActive) {
+      this.autoWalkActive = true;
+      this.instruction?.setText('Holding steady...\nwalking slowly!');
+    } else if (!automatic && this.autoWalkActive) {
+      this.autoWalkActive = false;
+      this.instruction?.setText('Walk carefully!');
+    }
     this.lastStep = this.time.now; this.steps++; this.nextFoot = 1 - this.nextFoot; this.refreshFeet();
     this.stepDots.forEach((dot, i) => dot.setVisible(i < this.steps));
     const journey = CAFE_LAYOUT.walker;
@@ -488,6 +504,11 @@ export class CafeScene extends Phaser.Scene {
       return;
     }
     if (this.stage !== 'CARRYING') return;
+    if (!this.fallback
+      && this.time.now - this.lastDetectedStep >= CAFE_TUNING.autoWalk.idleBeforeStartingMs
+      && this.time.now - this.lastStep >= CAFE_TUNING.autoWalk.intervalMs) {
+      this.acceptStep(true);
+    }
     const keyX = (this.keyboard?.right.isDown || this.wasd?.D.isDown ? 1 : 0) - (this.keyboard?.left.isDown || this.wasd?.A.isDown ? 1 : 0);
     const keyY = (this.keyboard?.down.isDown || this.wasd?.S.isDown ? 1 : 0) - (this.keyboard?.up.isDown || this.wasd?.W.isDown ? 1 : 0);
     const tilt = this.fallback ? { x: keyX || this.swipeTilt.x, y: keyY || this.swipeTilt.y } : this.motion.tilt;
