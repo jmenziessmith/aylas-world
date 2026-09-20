@@ -72,7 +72,7 @@ export class CafeScene extends Phaser.Scene {
   constructor() { super('aylas-cafe'); }
 
   preload(): void {
-    const needed = new Set(['counter-bg', 'carry-bg', 'serve-bg', 'ayla-welcome', 'ayla-carry', 'ayla-cheer', 'customer-bunny', 'customer-elephant', 'customer-monster', 'customer-bunny-happy', 'customer-elephant-happy', 'customer-monster-happy', 'tray', 'table', 'hand-left', 'hand-right', 'instruction', 'footprint', 'target-cookie', 'target-drink', 'target-cupcake', 'target-ice-cream', 'target-spoon', 'counter-tray', 'storage-box-heart', 'storage-box-flower', 'order-paper', 'speech-bubble-pink', 'status-empty', 'status-complete', 'step-progress-empty', ...Object.values(FOOD_VARIANTS).flat()]);
+    const needed = new Set(['counter-bg', 'carry-bg', 'serve-bg', 'ayla-welcome', 'ayla-carry', 'ayla-cheer', 'customer-bunny', 'customer-elephant', 'customer-monster', 'customer-bunny-happy', 'customer-elephant-happy', 'customer-monster-happy', 'tray', 'table', 'serving-plate', 'hand-left', 'hand-right', 'instruction', 'footprint', 'target-cookie', 'target-drink', 'target-cupcake', 'target-ice-cream', 'target-spoon', 'counter-tray', 'storage-box-heart', 'storage-box-flower', 'order-paper', 'speech-bubble-pink', 'status-empty', 'status-complete', 'step-progress-empty', ...Object.values(FOOD_VARIANTS).flat()]);
     for (const [key, path] of Object.entries(CAFE_ASSETS)) if (needed.has(key)) this.load.image(`cafe-${key}`, `${import.meta.env.BASE_URL}${path.replace(/^\//, '')}`);
     for (const key of ['home-button', 'audio-button']) this.load.image(`cafe-${key}`, `${import.meta.env.BASE_URL}assets/mermaid/sprites/${key}.png`);
   }
@@ -518,7 +518,11 @@ export class CafeScene extends Phaser.Scene {
       const { x, y } = positions[i];
       const served = this.round.items.find(item => item.itemId === itemId && item.status === 'served' && !assigned.has(item.id));
       if (served) assigned.add(served.id);
-      const target = this.art(this.targetKey(itemId), x, y, 132, 112);
+      const isPlatedTreat = itemId === 'cookie' || itemId === 'cupcake';
+      if (isPlatedTreat) this.art('serving-plate', x, y + 18, 158, 108).setAlpha(served ? 1 : .58);
+      const target = isPlatedTreat
+        ? this.art(this.itemKey(itemId), x, y - 7, 102, 88)
+        : this.art(this.targetKey(itemId), x, y, 132, 112);
       target.setAlpha(served ? 1 : .4);
       this.targets.push({ itemId, x, y, served: Boolean(served), view: target });
     });
