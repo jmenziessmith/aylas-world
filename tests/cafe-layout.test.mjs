@@ -50,15 +50,18 @@ test('tray art and input regions stay visible on supported landscape phones', ()
   }
 });
 
-test('all three counter sources remain distinct, touchable, and clear of the tray', () => {
-  assert.equal(CAFE_LAYOUT.sourceCenters.length, 3);
+test('all five counter categories remain distinct, touchable, and clear of the tray', () => {
+  assert.equal(CAFE_LAYOUT.sourceSlots.length, 5);
   const tray = bounds(CAFE_LAYOUT.prepTray, ART_MARGIN);
-  for (let index = 0; index < CAFE_LAYOUT.sourceCenters.length; index += 1) {
-    const x = CAFE_LAYOUT.sourceCenters[index];
-    assert.ok(x - SOURCE_ITEM_SIZE / 2 >= 0);
-    assert.ok(x + SOURCE_ITEM_SIZE / 2 < tray.left);
-    if (index > 0) {
-      assert.ok(x - CAFE_LAYOUT.sourceCenters[index - 1] >= SOURCE_ITEM_SIZE + 48);
+  for (let index = 0; index < CAFE_LAYOUT.sourceSlots.length; index += 1) {
+    const source = CAFE_LAYOUT.sourceSlots[index];
+    assert.ok(source.x - SOURCE_ITEM_SIZE / 2 >= 0);
+    assert.ok(source.x + SOURCE_ITEM_SIZE / 2 <= CAFE_LAYOUT.width);
+    assert.ok(source.y - SOURCE_ITEM_SIZE / 2 >= 0);
+    assert.ok(source.y + SOURCE_ITEM_SIZE / 2 <= CAFE_LAYOUT.height);
+    assert.ok(source.x + SOURCE_ITEM_SIZE / 2 < tray.left || source.y + SOURCE_ITEM_SIZE / 2 < tray.top);
+    for (const other of CAFE_LAYOUT.sourceSlots.slice(0, index)) {
+      assert.ok(Math.hypot(source.x - other.x, source.y - other.y) >= SOURCE_ITEM_SIZE + 48);
     }
   }
   for (const viewport of PHONE_VIEWPORTS) {

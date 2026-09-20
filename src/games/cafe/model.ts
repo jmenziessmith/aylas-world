@@ -1,4 +1,4 @@
-export type CafeItemId = 'cookie' | 'juice' | 'cupcake';
+export type CafeItemId = 'cookie' | 'juice' | 'cupcake' | 'ice-cream' | 'spoon';
 export type ServingSurface = 'plate' | 'coaster';
 export type CafeItemStatus = 'loaded' | 'spilled' | 'served';
 
@@ -53,12 +53,22 @@ export const CAFE_ITEMS: Readonly<Record<CafeItemId, CafeItemDefinition>> = {
     id: 'cupcake', label: 'Cupcake', emoji: '🧁', servingSurface: 'plate',
     physics: { radius: 0.062, slide: 0.9, damping: 1.02 },
   },
+  'ice-cream': {
+    id: 'ice-cream', label: 'Ice cream', emoji: '🍨', servingSurface: 'plate',
+    physics: { radius: 0.06, slide: 0.88, damping: 1.04 },
+  },
+  spoon: {
+    id: 'spoon', label: 'Spoon', emoji: '🥄', servingSurface: 'plate',
+    physics: { radius: 0.042, slide: 0.8, damping: 1.14 },
+  },
 };
 
 export const CAFE_ORDERS: readonly CafeOrder[] = [
   { id: 'first-treats', lines: [{ itemId: 'cookie', count: 1 }, { itemId: 'juice', count: 1 }], steps: 10 },
   { id: 'cookie-count', lines: [{ itemId: 'cookie', count: 2 }, { itemId: 'juice', count: 1 }], steps: 10 },
   { id: 'cupcake-treat', lines: [{ itemId: 'cupcake', count: 1 }, { itemId: 'juice', count: 1 }], steps: 10 },
+  { id: 'cool-treat', lines: [{ itemId: 'ice-cream', count: 1 }, { itemId: 'juice', count: 1 }], steps: 10 },
+  { id: 'dessert-spoon', lines: [{ itemId: 'cupcake', count: 1 }, { itemId: 'ice-cream', count: 1 }, { itemId: 'spoon', count: 1 }], steps: 10 },
 ];
 
 export function createRound(order: CafeOrder = CAFE_ORDERS[0]): CafeRound {

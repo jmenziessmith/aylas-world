@@ -13,6 +13,13 @@ const W = CAFE_LAYOUT.width; const H = CAFE_LAYOUT.height;
 const PREP_TRAY = CAFE_LAYOUT.prepTray;
 const CARRY_TRAY = CAFE_LAYOUT.carryTray;
 const SERVE_TRAY = CAFE_LAYOUT.serveTray;
+const FOOD_VARIANTS: Readonly<Record<CafeItemId, readonly string[]>> = {
+  cookie: ['item-cookie-chocolate-chip', 'item-cookie-heart'],
+  juice: ['item-drink-orange', 'item-drink-strawberry', 'item-drink-green'],
+  cupcake: ['item-cupcake-heart', 'item-cupcake-chocolate', 'item-cupcake-strawberry'],
+  'ice-cream': ['item-ice-cream-vanilla', 'item-ice-cream-chocolate', 'item-ice-cream-mint'],
+  spoon: ['item-spoon-blue'],
+};
 
 export class CafeScene extends Phaser.Scene {
   private root!: Phaser.GameObjects.Container;
@@ -52,6 +59,10 @@ export class CafeScene extends Phaser.Scene {
   private carryOnboardingComplete = false;
   private showCarryInstruction = false;
   private customerStartIndex = 0;
+  private itemVariants: Record<CafeItemId, string> = {
+    cookie: FOOD_VARIANTS.cookie[0], juice: FOOD_VARIANTS.juice[0], cupcake: FOOD_VARIANTS.cupcake[0],
+    'ice-cream': FOOD_VARIANTS['ice-cream'][0], spoon: FOOD_VARIANTS.spoon[0],
+  };
   private sensorNote = '';
   private tiltWarning?: Phaser.GameObjects.Rectangle;
   private debug?: Phaser.GameObjects.Text;
@@ -59,7 +70,7 @@ export class CafeScene extends Phaser.Scene {
   constructor() { super('aylas-cafe'); }
 
   preload(): void {
-    const needed = new Set(['counter-bg', 'carry-bg', 'serve-bg', 'ayla-welcome', 'ayla-carry', 'ayla-cheer', 'customer-bunny', 'customer-elephant', 'customer-monster', 'customer-bunny-happy', 'customer-elephant-happy', 'customer-monster-happy', 'tray', 'table', 'hand-left', 'hand-right', 'instruction', 'footprint', 'target-cookie', 'target-drink', 'target-cupcake', 'counter-tray', 'storage-box-heart', 'storage-box-flower', 'order-paper', 'speech-bubble-pink', 'status-empty', 'status-complete', 'step-progress-empty', ...Object.keys(CAFE_ITEMS).map(id => `item-${id}`)]);
+    const needed = new Set(['counter-bg', 'carry-bg', 'serve-bg', 'ayla-welcome', 'ayla-carry', 'ayla-cheer', 'customer-bunny', 'customer-elephant', 'customer-monster', 'customer-bunny-happy', 'customer-elephant-happy', 'customer-monster-happy', 'tray', 'table', 'hand-left', 'hand-right', 'instruction', 'footprint', 'target-cookie', 'target-drink', 'target-cupcake', 'target-ice-cream', 'target-spoon', 'counter-tray', 'storage-box-heart', 'storage-box-flower', 'order-paper', 'speech-bubble-pink', 'status-empty', 'status-complete', 'step-progress-empty', ...Object.values(FOOD_VARIANTS).flat()]);
     for (const [key, path] of Object.entries(CAFE_ASSETS)) if (needed.has(key)) this.load.image(`cafe-${key}`, `${import.meta.env.BASE_URL}${path.replace(/^\//, '')}`);
     for (const key of ['home-button', 'audio-button']) this.load.image(`cafe-${key}`, `${import.meta.env.BASE_URL}assets/mermaid/sprites/${key}.png`);
   }
@@ -74,6 +85,7 @@ export class CafeScene extends Phaser.Scene {
       }
     } });
     this.customerStartIndex = Phaser.Math.Between(0, 2);
+    this.chooseItemVariants();
     try {
       const previouslyEnabled = localStorage.getItem('aylas-cafe-motion-enabled') === '1';
       this.motionGranted = previouslyEnabled && !this.motion.requiresGesturePermission;
@@ -220,13 +232,20 @@ export class CafeScene extends Phaser.Scene {
     this.panel(500, 327, 850, 430);
     this.art('ayla-welcome', 228, 324, 220, 300, 'Ayla');
     this.text(625, 159, 'A little café adventure', 29);
-    ['cookie', 'juice', 'cupcake'].forEach((key, i) => this.art(`item-${key}`, 500 + i * 126, 247, 90));
+    (['cookie', 'juice', 'cupcake'] as CafeItemId[]).forEach((itemId, i) => this.art(this.itemKey(itemId), 500 + i * 126, 247, 90));
     this.text(625, 333, 'Choose it  →  Carry it  →  Serve it', 24);
     this.text(625, 378, 'No hurry. Let’s help a hungry friend!', 20);
     this.button(625, 461, 'Let’s play!', () => { this.stage = 'SELECTING_ITEMS'; this.render(); this.speak('Make the order. Put it on the tray!'); }, 245);
   }
 
-  private itemKey(item: CafeItemId): string { return `item-${item}`; }
+  private chooseItemVariants(): void {
+    (Object.keys(FOOD_VARIANTS) as CafeItemId[]).forEach(itemId => {
+      this.itemVariants[itemId] = Phaser.Utils.Array.GetRandom([...FOOD_VARIANTS[itemId]]);
+    });
+  }
+
+  private itemKey(item: CafeItemId): string { return this.itemVariants[item]; }
+  private targetKey(item: CafeItemId): string { return `target-${item === 'juice' ? 'drink' : item}`; }
   private customerKey(): string { return ['customer-bunny', 'customer-elephant', 'customer-monster'][(this.customerStartIndex + this.roundIndex) % 3]; }
   private loaded() { return this.round.items.filter(item => item.status === 'loaded'); }
 
@@ -236,12 +255,13 @@ export class CafeScene extends Phaser.Scene {
     this.orderPaper(855, 229);
     const ids = Object.keys(CAFE_ITEMS) as CafeItemId[];
     ids.forEach((id, i) => {
-      const x = CAFE_LAYOUT.sourceCenters[i]; const boxKey = i % 2 ? 'storage-box-flower' : 'storage-box-heart';
-      const boxY = CAFE_LAYOUT.sourceBoxY;
+      const slot = CAFE_LAYOUT.sourceSlots[i]; const x = slot.x; const boxKey = i % 2 ? 'storage-box-flower' : 'storage-box-heart';
+      const boxY = slot.y; const sourceY = boxY - 35;
+      const variants = FOOD_VARIANTS[id];
       this.art(boxKey, x, boxY, 162, 112);
-      this.art(this.itemKey(id), x - 32, boxY - 34, 58).setAngle(-12);
-      this.art(this.itemKey(id), x + 33, boxY - 32, 58).setAngle(10);
-      const view = this.art(this.itemKey(id), x, CAFE_LAYOUT.sourceY, 88, 88, CAFE_ITEMS[id].label).setSize(150, 126);
+      this.art(variants[0], x - 32, boxY - 34, 58).setAngle(-12);
+      this.art(variants.at(-1)!, x + 33, boxY - 32, 58).setAngle(10);
+      const view = this.art(this.itemKey(id), x, sourceY, 88, 88, CAFE_ITEMS[id].label).setSize(150, 126);
       this.sourceViews.set(id, view); this.makeDraggable(view, id);
       this.boxFront(boxKey, x, boxY, 162, 112);
     });
@@ -470,7 +490,7 @@ export class CafeScene extends Phaser.Scene {
       const { x, y } = positions[i];
       const served = this.round.items.find(item => item.itemId === itemId && item.status === 'served' && !assigned.has(item.id));
       if (served) assigned.add(served.id);
-      const target = this.art(`target-${itemId === 'juice' ? 'drink' : itemId}`, x, y, 132, 112);
+      const target = this.art(this.targetKey(itemId), x, y, 132, 112);
       target.setAlpha(served ? 1 : .4);
       this.targets.push({ itemId, x, y, served: Boolean(served), view: target });
     });
@@ -506,6 +526,7 @@ export class CafeScene extends Phaser.Scene {
 
   private nextRound(): void {
     this.roundIndex++; this.round = createRound(CAFE_ORDERS[this.roundIndex % CAFE_ORDERS.length]);
+    this.chooseItemVariants();
     this.bodies = []; this.positions.clear(); this.steps = 0; this.nextFoot = 0; this.stage = 'SELECTING_ITEMS'; this.render();
   }
 

@@ -5,9 +5,10 @@ export const CAFE_LAYOUT = {
   prepTray: { x: 830, y: 493, w: 300, h: 130 },
   carryTray: { x: 485, y: 437, w: 420, h: 260 },
   serveTray: { x: 240, y: 385, w: 416, h: 272 },
-  sourceCenters: [270, 420, 570],
-  sourceY: 413,
-  sourceBoxY: 448,
+  sourceSlots: [
+    { x: 220, y: 350 }, { x: 400, y: 350 }, { x: 580, y: 350 },
+    { x: 310, y: 475 }, { x: 490, y: 475 },
+  ],
   walker: { startX: 500, endX: 700, y: 265 },
   progress: { x: 500, y: 52, width: 510, height: 118, firstSlot: 40 / 629, lastSlot: 584 / 629 },
   table: { x: 618, y: 641, width: 950, height: 673 },

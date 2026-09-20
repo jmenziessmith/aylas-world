@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
   CAFE_ORDERS,
+  CAFE_ITEMS,
   addItem,
   beginRecovery,
   canAddItem,
@@ -34,6 +35,21 @@ test('orders accept exact items and counts only', () => {
   assert.equal(markServed(round, first.id, 'cookie'), true);
   assert.equal(canAddItem(round, 'cookie'), false);
   assert.equal(addItem(round, 'cookie'), undefined);
+});
+
+test('ice cream and spoon orders use their category targets', () => {
+  assert.ok(CAFE_ITEMS['ice-cream']);
+  assert.ok(CAFE_ITEMS.spoon);
+  const order = CAFE_ORDERS.find(({ id }) => id === 'dessert-spoon');
+  assert.ok(order);
+  const round = createRound(order);
+  const cupcake = addItem(round, 'cupcake');
+  const iceCream = addItem(round, 'ice-cream');
+  const spoon = addItem(round, 'spoon');
+  assert.ok(cupcake && iceCream && spoon);
+  assert.equal(validateLoadedOrder(round), true);
+  assert.equal(markServed(round, iceCream.id, 'ice-cream'), true);
+  assert.equal(markServed(round, spoon.id, 'spoon'), true);
 });
 
 test('serving checks the target and spills can be recovered', () => {
