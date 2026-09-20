@@ -37,6 +37,7 @@ export class MermaidGameScene extends Phaser.Scene {
   private debugModeActive = false; private soundEnabled = true; private speechUnlocked = false; private lastEdgeTap = 0;
   private modesSinceBridge = 0; private nextBridgeAt = 3; private bridgePromptOrder: string[] = [];
   private speechTimer?: number;
+  private audioContext?: AudioContext;
   private readonly chapters: Mode[] = ['match', 'count', 'pattern', 'add', 'sort', 'compare', 'subtract', 'number'];
 
   constructor() { super('mermaid-game'); }
@@ -61,8 +62,8 @@ export class MermaidGameScene extends Phaser.Scene {
     this.makeTopBar(); this.makeHost(); this.makeNecklace(); this.content = this.add.container(0, 0);
     const needsSpeechGesture = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
     this.speechUnlocked = !needsSpeechGesture;
-    if (needsSpeechGesture) this.game.canvas.addEventListener('pointerdown', () => { this.speechUnlocked = true; this.speak(this.worldBridge ? this.prompt.text : this.round?.prompt ?? 'Welcome to Mermaid Magic!', true); }, { once: true, capture: true });
-    this.scale.on(Phaser.Scale.Events.RESIZE, this.resize, this); this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => { if (this.speechTimer !== undefined) window.clearTimeout(this.speechTimer); speechSynthesis?.cancel(); });
+    if (needsSpeechGesture) this.game.canvas.addEventListener('pointerdown', () => this.unlockVoice(), { once: true, capture: true });
+    this.scale.on(Phaser.Scale.Events.RESIZE, this.resize, this); this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => { if (this.speechTimer !== undefined) window.clearTimeout(this.speechTimer); speechSynthesis?.cancel(); void this.audioContext?.close(); });
     if (import.meta.env.DEV) {
       const params = new URLSearchParams(window.location.search); const debugMode = params.get('mode') as Mode | null;
       if (debugMode && this.chapters.includes(debugMode)) { this.chapterIndex = this.chapters.indexOf(debugMode); this.debugModeActive = true; }
@@ -86,7 +87,12 @@ export class MermaidGameScene extends Phaser.Scene {
     const panel = this.add.image(480, 51, 'title-banner').setDisplaySize(450, 105).setDepth(50).setName('top-panel');
     this.title = this.add.text(480, 55, 'Mermaid Magic', this.textStyle(29, '#234b74')).setOrigin(.5).setDepth(51);
     const home = this.artButton(48, 52, 'home-button', () => { window.location.href = import.meta.env.BASE_URL; }); home.setDepth(60).setName('home-control');
-    this.audioButton = this.artButton(912, 52, 'audio-button', () => { this.soundEnabled = !this.soundEnabled; this.audioButton.setAlpha(this.soundEnabled ? 1 : .5); if (!this.soundEnabled) window.speechSynthesis?.cancel(); else this.speak(this.worldBridge ? this.prompt.text : this.round?.prompt ?? 'Sound is on!', true); }); this.audioButton.setDepth(60).setName('audio-control');
+    this.audioButton = this.artButton(912, 52, 'audio-button', () => {
+      // iOS only permits speech started from a real tap.  Treat the first tap on
+      // this control as an unlock, rather than accidentally turning sound off.
+      if (!this.speechUnlocked || !this.soundEnabled) { this.soundEnabled = true; this.audioButton.setAlpha(1); this.unlockVoice(); return; }
+      this.soundEnabled = false; this.audioButton.setAlpha(.5); window.speechSynthesis?.cancel();
+    }); this.audioButton.setDepth(60).setName('audio-control');
     panel.setScrollFactor(0); this.title.setScrollFactor(0);
   }
   private artButton(x: number, y: number, key: string, callback: () => void): Phaser.GameObjects.Image {
@@ -249,6 +255,17 @@ export class MermaidGameScene extends Phaser.Scene {
     return Array.from({ length: count }, (_, index) => new Phaser.Math.Vector2(x + (index % cols + .5) * width / cols, y + (Math.floor(index / cols) + .5) * height / rows));
   }
   private setMermaid(key: string): void { const hostX = this.round?.mode === 'number' && !this.worldBridge ? 1045 : 875; this.mermaid.setTexture(key).setDisplaySize(385, 510).setX(hostX + this.layoutOffset); }
+  private unlockVoice(): void {
+    this.speechUnlocked = true; this.soundEnabled = true; this.audioButton.setAlpha(1);
+    // Resuming a Web Audio context in the tap handler makes Safari regard the
+    // page as audio-active.  It also gives speech synthesis a dependable route
+    // back after the user has muted and unmuted the game.
+    const audioWindow = window as Window & { webkitAudioContext?: typeof AudioContext };
+    const AudioContextConstructor = window.AudioContext ?? audioWindow.webkitAudioContext;
+    if (AudioContextConstructor) { this.audioContext ??= new AudioContextConstructor(); void this.audioContext.resume(); }
+    window.speechSynthesis?.resume(); window.speechSynthesis?.getVoices();
+    this.speak(this.worldBridge ? this.prompt.text : this.round?.prompt ?? 'Welcome to Mermaid Magic!', true);
+  }
   private speak(text: string, immediate = false): void {
     if (!this.soundEnabled || !this.speechUnlocked || !('speechSynthesis' in window)) return;
     if (this.speechTimer !== undefined) window.clearTimeout(this.speechTimer);
