@@ -388,8 +388,8 @@ export class CafeScene extends Phaser.Scene {
     const journey = CAFE_LAYOUT.walker;
     const journeyProgress = this.steps / this.round.order.steps;
     this.carryBackground?.setX(Phaser.Math.Linear(journey.backgroundStartX, journey.backgroundEndX, journeyProgress));
-    this.art(this.customerKey(), 831, 130, 90, 104, 'Friend');
-    this.art('table', 828, 220, 170, 104, 'Table');
+    this.art(this.customerKey(), 865, 130, 90, 104, 'Friend');
+    this.art('table', 860, 220, 170, 104, 'Table');
     this.walker = this.art('ayla-carry', journey.startX + journeyProgress * (journey.endX - journey.startX), journey.y, 180, 170, 'Ayla');
     const bar = CAFE_LAYOUT.progress;
     this.art('step-progress-empty', bar.x, bar.y, bar.width, bar.height);

@@ -7,7 +7,7 @@ export const CAFE_LAYOUT = {
   serveTray: { x: 240, y: 385, w: 416, h: 272 },
   sourceCenters: [132, 300, 468],
   sourceY: 433,
-  walker: { startX: 345, endX: 560, y: 265, backgroundStartX: -180, backgroundEndX: 0 },
+  walker: { startX: 500, endX: 700, y: 265, backgroundStartX: 0, backgroundEndX: -180 },
   progress: { x: 500, y: 52, width: 510, height: 118, firstSlot: 40 / 629, lastSlot: 584 / 629 },
   table: { x: 618, y: 641, width: 950, height: 673 },
   customer: { x: 615, y: 172, width: 250, height: 270 },
