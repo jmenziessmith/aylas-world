@@ -34,6 +34,8 @@ export class CafeScene extends Phaser.Scene {
   private drag?: Drag;
   private carryGroup?: Phaser.GameObjects.Container;
   private carryBackground?: Phaser.GameObjects.Image;
+  private backgroundLayers: Phaser.GameObjects.Image[] = [];
+  private backgroundViewport: { x: number; y: number; width: number; height: number } = { x: 0, y: 0, width: W, height: H };
   private walker?: Art;
   private steps = 0;
   private lastStep = -1000;
@@ -114,6 +116,7 @@ export class CafeScene extends Phaser.Scene {
     const { width, height } = this.scale.gameSize;
     const scale = Math.min((width - 24) / W, (height - 12) / H);
     this.root.setPosition((width - W * scale) / 2, (height - H * scale) / 2).setScale(scale);
+    this.layoutBackgrounds();
     this.cancelDrag();
     if (this.stage === 'CARRYING' && !this.fallback) this.showCalibration();
   }
@@ -186,8 +189,31 @@ export class CafeScene extends Phaser.Scene {
   private counterForeground(): void {
     if (!this.textures.exists('cafe-counter-bg')) return;
     const image = this.add.image(0, 0, 'cafe-counter-bg').setOrigin(0, 0);
-    image.setScale(Math.max(W / image.width, H / image.height));
-    image.setCrop(0, 488, image.width, image.height - 488); this.root.add(image);
+    image.setCrop(0, 488, image.width, image.height - 488);
+    this.root.add(image); this.backgroundLayers.push(image); this.layoutBackgrounds();
+  }
+
+  /**
+   * The play area has a small safe margin, while the cafe artwork must touch the
+   * physical canvas edges. These bounds are expressed in root-local coordinates,
+   * allowing each backdrop to cover the visible viewport at every aspect ratio.
+   */
+  private layoutBackgrounds(): void {
+    if (!this.root || this.backgroundLayers.length === 0) return;
+    const scaleX = this.root.scaleX || 1;
+    const scaleY = this.root.scaleY || 1;
+    const { width, height } = this.scale.gameSize;
+    this.backgroundViewport = {
+      x: -this.root.x / scaleX,
+      y: -this.root.y / scaleY,
+      width: width / scaleX,
+      height: height / scaleY,
+    };
+    this.backgroundLayers.forEach(layer => {
+      layer.setPosition(this.backgroundViewport.x, this.backgroundViewport.y);
+      layer.setScale(Math.max(this.backgroundViewport.width / layer.width, this.backgroundViewport.height / layer.height));
+    });
+    if (this.carryBackground) this.carryBackground.setX(this.carryBackgroundX(this.steps / this.round.order.steps));
   }
 
   private boxFront(key: string, x: number, y: number, width: number, height: number): void {
@@ -200,7 +226,7 @@ export class CafeScene extends Phaser.Scene {
   private render(): void {
     this.cancelDrag(); this.tweens.killAll(); this.root.removeAll(true);
     this.bodyViews.clear(); this.sourceViews.clear(); this.targets = []; this.stepDots = []; this.footButtons = [];
-    this.carryGroup = undefined; this.carryBackground = undefined; this.walker = undefined; this.tiltWarning = undefined; this.hint = undefined; this.debug = undefined;
+    this.carryGroup = undefined; this.carryBackground = undefined; this.backgroundLayers = []; this.walker = undefined; this.tiltWarning = undefined; this.hint = undefined; this.debug = undefined;
     const servingScene = this.stage === 'SERVING' || this.stage === 'ROUND_COMPLETE';
     const background = servingScene ? 'serve-bg' : ['CARRYING', 'CALIBRATING_TRAY', 'ARRIVING'].includes(this.stage) ? 'carry-bg' : 'counter-bg';
     // One wide background is decorative; the independently rendered tray/food remain interactive.
@@ -208,8 +234,9 @@ export class CafeScene extends Phaser.Scene {
     if (this.textures.exists(`cafe-${background}`)) {
       // Every café scene uses the same left edge, so its landmarks never jump between modes.
       const bg = this.add.image(0, 0, `cafe-${background}`).setOrigin(0, 0);
-      bg.setScale(Math.max(W / bg.width, H / bg.height)); this.root.add(bg);
+      this.root.add(bg); this.backgroundLayers.push(bg); this.layoutBackgrounds();
       if (background === 'carry-bg') this.carryBackground = bg;
+      if (background === 'carry-bg') this.layoutBackgrounds();
     }
     this.instruction = undefined;
     if (['INTRO', 'MOTION_PERMISSION', 'CALIBRATING_TRAY'].includes(this.stage)) {
@@ -451,8 +478,9 @@ export class CafeScene extends Phaser.Scene {
 
   /** Scroll to the far available artwork edge, whatever width cover-scaling produced. */
   private carryBackgroundX(progress: number): number {
-    const farEdge = Math.min(0, W - (this.carryBackground?.displayWidth ?? W));
-    return Phaser.Math.Linear(0, farEdge, progress);
+    const start = this.backgroundViewport.x;
+    const farEdge = start + Math.min(0, this.backgroundViewport.width - (this.carryBackground?.displayWidth ?? this.backgroundViewport.width));
+    return Phaser.Math.Linear(start, farEdge, progress);
   }
 
   private refreshFeet(): void { this.footButtons.forEach((button, i) => button.setAlpha(i === this.nextFoot ? 1 : .5)); }
