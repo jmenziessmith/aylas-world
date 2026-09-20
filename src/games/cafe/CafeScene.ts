@@ -10,6 +10,7 @@ type Stage = 'INTRO' | 'SELECTING_ITEMS' | 'READY_TO_CARRY' | 'MOTION_PERMISSION
 type Art = Phaser.GameObjects.Container;
 interface Drag { view: Art; itemId: CafeItemId; instanceId?: string; fromX: number; fromY: number; pointerId: number }
 const W = CAFE_LAYOUT.width; const H = CAFE_LAYOUT.height;
+const MOTION_PERMISSION_STORAGE_KEY = 'aylas-world-motion-granted';
 const PREP_TRAY = CAFE_LAYOUT.prepTray;
 const CARRY_TRAY = CAFE_LAYOUT.carryTray;
 const SERVE_TRAY = CAFE_LAYOUT.serveTray;
@@ -61,7 +62,6 @@ export class CafeScene extends Phaser.Scene {
   private muted = false;
   private alive = true;
   private motionGranted = false;
-  private carryOnboardingComplete = false;
   private customerStartIndex = 0;
   private itemVariants: Record<CafeItemId, string> = {
     cookie: FOOD_VARIANTS.cookie[0], juice: FOOD_VARIANTS.juice[0], cupcake: FOOD_VARIANTS.cupcake[0],
@@ -91,10 +91,12 @@ export class CafeScene extends Phaser.Scene {
     this.customerStartIndex = Phaser.Math.Between(0, 2);
     this.chooseItemVariants();
     try {
-      const previouslyEnabled = localStorage.getItem('aylas-cafe-motion-enabled') === '1';
+      const previouslyEnabled = localStorage.getItem(MOTION_PERMISSION_STORAGE_KEY) === 'yes'
+        || localStorage.getItem('aylas-cafe-motion-enabled') === '1';
       this.motionGranted = previouslyEnabled && !this.motion.requiresGesturePermission;
     } catch { /* Motion can still be enabled from its button. */ }
     if (this.motionGranted) this.motion.enablePreviouslyGranted();
+    if (!this.motionGranted && this.motion.supported && window.isSecureContext) this.stage = 'MOTION_PERMISSION';
     this.keyboard = this.input.keyboard?.createCursorKeys();
     this.wasd = this.input.keyboard?.addKeys('W,A,S,D') as Record<string, Phaser.Input.Keyboard.Key> | undefined;
     this.input.keyboard?.on('keydown-SPACE', (event: KeyboardEvent) => {
@@ -125,13 +127,12 @@ export class CafeScene extends Phaser.Scene {
       this.render();
       return;
     }
-    if (this.stage === 'CARRYING' && !this.fallback) this.showCalibration();
   }
 
   private readonly onVisibility = (): void => {
     this.cancelDrag(); this.swipeTilt = { x: 0, y: 0 };
     if (document.hidden) window.speechSynthesis?.cancel();
-    else if (this.stage === 'CARRYING') this.showCalibration();
+    else if (this.stage === 'CARRYING' && !this.fallback) this.motion.startCalibration();
   };
   private readonly onBlur = (): void => { this.cancelDrag(); this.swipeTilt = { x: 0, y: 0 }; };
 
@@ -279,7 +280,18 @@ export class CafeScene extends Phaser.Scene {
     (['cookie', 'juice', 'cupcake'] as CafeItemId[]).forEach((itemId, i) => this.art(this.itemKey(itemId), 500 + i * 126, 247, 90));
     this.text(625, 333, 'Choose it  →  Carry it  →  Serve it', 24);
     this.text(625, 378, 'No hurry. Let’s help a hungry friend!', 20);
-    this.button(625, 461, 'Let’s play!', () => { this.stage = 'SELECTING_ITEMS'; this.render(); this.speak('Make the order. Put it on the tray!'); }, 245);
+    this.button(625, 461, 'Let’s play!', () => { this.startSelection(); }, 245);
+  }
+
+  private startIntro(): void {
+    this.stage = 'INTRO';
+    this.render();
+  }
+
+  private startSelection(): void {
+    this.stage = 'SELECTING_ITEMS';
+    this.render();
+    this.speak('Make the order. Put it on the tray!');
   }
 
   private chooseItemVariants(): void {
@@ -418,10 +430,10 @@ export class CafeScene extends Phaser.Scene {
   private renderPermission(): void {
     this.panel(500, 333, 810, 450);
     this.art('instruction', 275, 314, 285, 250, 'Hold phone flat');
-    this.text(665, 178, 'Your phone is the tray!', 29);
-    this.text(665, 246, 'Hold it flat.\nWalk 10 careful steps.', 27);
+    this.text(665, 178, 'Play with phone motion?', 29);
+    this.text(665, 246, 'Hold your phone like a tray.\nOr use keys on desktop.', 25);
     this.button(665, 346, this.motion.requiresGesturePermission ? 'Turn phone motion on' : 'Use phone motion', () => { void this.enableMotion(); }, 288);
-    this.button(665, 433, 'Play with buttons', () => { this.fallback = true; this.sensorNote = ''; this.showCalibration(); }, 288, 0xf6d4e5);
+    this.button(665, 433, 'Play with keys', () => { this.fallback = true; this.sensorNote = ''; this.startIntro(); }, 288, 0xf6d4e5);
     this.text(500, 518, 'Desktop: drag with the mouse · arrows / WASD to tilt · Space to step', 18);
   }
 
@@ -431,29 +443,18 @@ export class CafeScene extends Phaser.Scene {
     if (!this.alive || this.stage !== 'MOTION_PERMISSION') return;
     this.motionGranted = result === 'enabled';
     if (this.motionGranted) {
-      try { localStorage.setItem('aylas-cafe-motion-enabled', '1'); } catch { /* Keep this round enabled when storage is restricted. */ }
+      try { localStorage.setItem(MOTION_PERMISSION_STORAGE_KEY, 'yes'); } catch { /* Keep this round enabled when storage is restricted. */ }
     } else {
-      try { localStorage.removeItem('aylas-cafe-motion-enabled'); } catch { /* The on-screen fallback remains available. */ }
+      try { localStorage.removeItem(MOTION_PERMISSION_STORAGE_KEY); localStorage.removeItem('aylas-cafe-motion-enabled'); } catch { /* The on-screen fallback remains available. */ }
     }
     this.fallback = !this.motionGranted;
     this.sensorNote = this.fallback ? 'Motion unavailable — buttons work too!' : '';
-    this.showCalibration();
+    this.startIntro();
   }
 
   private beginCarryFromOrder(): void {
-    if (this.carryOnboardingComplete) {
-      this.fallback = !this.motionGranted;
-      this.startCarry();
-      return;
-    }
-    if (this.motionGranted) {
-      this.fallback = false;
-      this.showCalibration();
-      return;
-    }
-    this.stage = 'MOTION_PERMISSION';
-    this.render();
-    this.speak('Hold your phone like a tray.');
+    this.fallback = !this.motionGranted;
+    this.startCarry();
   }
 
   private showCalibration(): void {
@@ -480,7 +481,6 @@ export class CafeScene extends Phaser.Scene {
         return createTrayBody(item.id, item.itemId, pos ? .5 + (pos.x - PREP_TRAY.x) / PREP_TRAY.w : .5 + (i - (items.length - 1) / 2) * .22, pos ? .5 + (pos.y - PREP_TRAY.y) / PREP_TRAY.h : .5);
       });
     }
-    this.carryOnboardingComplete = true;
     this.stage = 'CARRYING'; this.lastStep = this.time.now; this.lastDetectedStep = this.time.now; this.autoWalkActive = false;
     this.render(); this.speak('Walk carefully. Ten steps to your friend!');
   }
@@ -490,7 +490,6 @@ export class CafeScene extends Phaser.Scene {
     const journey = CAFE_LAYOUT.walker;
     const journeyProgress = this.steps / this.round.order.steps;
     this.carryBackground?.setX(this.carryBackgroundX(journeyProgress));
-    this.art('table', 860, 220, 170, 104, 'Table');
     this.walker = this.art('ayla-carry', journey.startX + journeyProgress * (journey.endX - journey.startX), journey.y, 180, 170, 'Ayla');
     const bar = CAFE_LAYOUT.progress;
     this.art('step-progress-empty', bar.x, bar.y, bar.width, bar.height);
@@ -579,7 +578,8 @@ export class CafeScene extends Phaser.Scene {
       this.instruction?.setText('One more little trip!');
       this.button(244, 196, 'Fetch missing →', () => {
         beginRecovery(this.round); this.bodies = []; this.steps = 0; this.nextFoot = 0;
-        this.showCalibration(); this.speak('One more little trip. Let’s bring the missing treats!');
+        this.fallback = !this.motionGranted;
+        this.startCarry(); this.speak('One more little trip. Let’s bring the missing treats!');
       }, 245, 0xffe1a2);
     } else if (this.round.items.length > 0) {
       this.stage = 'ROUND_COMPLETE'; this.render(); this.chime(880); this.speak('Thank you! What a lovely café!');

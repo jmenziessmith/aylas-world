@@ -2,7 +2,7 @@
 export const CAFE_LAYOUT = {
   width: 1000,
   height: 600,
-  prepTray: { x: 825, y: 355, w: 260, h: 120 },
+  prepTray: { x: 825, y: 310, w: 260, h: 120 },
   carryTray: { x: 485, y: 437, w: 420, h: 260 },
   serveTray: { x: 240, y: 385, w: 416, h: 272 },
   sourceSlots: [
