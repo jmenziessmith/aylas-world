@@ -75,7 +75,7 @@ export class CafeScene extends Phaser.Scene {
   constructor() { super('aylas-cafe'); }
 
   preload(): void {
-    const needed = new Set(['counter-bg', 'carry-bg', 'serve-bg', 'ayla-welcome', 'ayla-carry', 'ayla-cheer', 'customer-bunny', 'customer-elephant', 'customer-monster', 'customer-bunny-happy', 'customer-elephant-happy', 'customer-monster-happy', 'tray', 'table', 'serving-plate', 'hand-left', 'hand-right', 'instruction', 'footprint', 'target-cookie', 'target-drink', 'target-cupcake', 'target-ice-cream', 'target-spoon', 'counter-tray', 'storage-box-heart', 'storage-box-flower', 'order-paper', 'speech-bubble-pink', 'status-empty', 'status-complete', 'step-progress-empty', ...Object.values(FOOD_VARIANTS).flat()]);
+    const needed = new Set(['counter-bg', 'carry-bg', 'serve-bg', 'ayla-welcome', 'ayla-carry', 'ayla-cheer', 'customer-bunny', 'customer-elephant', 'customer-monster', 'customer-bunny-happy', 'customer-elephant-happy', 'customer-monster-happy', 'tray', 'table', 'serving-plate', 'hand-left', 'hand-right', 'instruction', 'footprint', 'target-cookie', 'target-drink', 'target-cupcake', 'target-ice-cream', 'target-spoon', 'counter-tray', 'storage-box-heart', 'storage-box-flower', 'speech-bubble-pink', 'status-empty', 'status-complete', 'step-progress-empty', ...Object.values(FOOD_VARIANTS).flat()]);
     for (const [key, path] of Object.entries(CAFE_ASSETS)) if (needed.has(key)) this.load.image(`cafe-${key}`, `${import.meta.env.BASE_URL}${path.replace(/^\//, '')}`);
     for (const key of ['home-button', 'audio-button']) this.load.image(`cafe-${key}`, `${import.meta.env.BASE_URL}assets/mermaid/sprites/${key}.png`);
   }
@@ -199,17 +199,6 @@ export class CafeScene extends Phaser.Scene {
     resizeIcon(this.soundButton, width - padding - size / 2);
   }
 
-  private orderPaper(x: number, y: number, serving = false): void {
-    this.art('order-paper', x, y, 286, 300);
-    this.round.order.lines.forEach((line, i) => {
-      const rowY = y - 8 + i * 78;
-      this.art(this.itemKey(line.itemId), x - 25, rowY, 64);
-      const placed = this.round.items.filter(item => item.itemId === line.itemId && (serving ? item.status === 'served' : item.status === 'loaded')).length;
-      const quantity = serving ? `${placed}/${line.count}` : `${line.count}`;
-      this.text(x + 44, rowY, quantity, 25, serving && placed === line.count ? '#477d56' : '#76533d');
-    });
-  }
-
   /** Reuses the exact background pixels in front of Ayla to put her behind the counter. */
   private counterForeground(): void {
     if (!this.textures.exists('cafe-counter-bg')) return;
@@ -304,7 +293,7 @@ export class CafeScene extends Phaser.Scene {
   private renderSelection(): void {
     this.art('ayla-welcome', 500, 301, 334, 386, 'Ayla');
     this.counterForeground();
-    this.orderPaper(855, 229);
+    this.selectionOrderBubble();
     const ids = Object.keys(CAFE_ITEMS) as CafeItemId[];
     ids.forEach((id, i) => {
       const slot = CAFE_LAYOUT.sourceSlots[i]; const x = slot.x; const boxKey = i % 2 ? 'storage-box-flower' : 'storage-box-heart';
@@ -329,6 +318,15 @@ export class CafeScene extends Phaser.Scene {
       this.makeDraggable(view, item.itemId, item.id);
     });
     this.selectionHint();
+  }
+
+  /** The monster asks with pictures, so non-readers can build the order too. */
+  private selectionOrderBubble(): void {
+    this.art('speech-bubble-pink', 700, 132, 320, 170);
+    const ordered = this.round.order.lines.flatMap(line => Array.from({ length: line.count }, () => line.itemId));
+    const startX = 700 - (ordered.length - 1) * 46;
+    ordered.forEach((itemId, index) => this.art(this.itemKey(itemId), startX + index * 92, 132, 68));
+    this.art('customer-monster', 896, 180, 150, 174, 'Friend');
   }
 
   private drawTray(rect: { x: number; y: number; w: number; h: number }, key = 'tray'): void {

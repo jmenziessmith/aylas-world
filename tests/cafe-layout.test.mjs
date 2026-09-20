@@ -59,7 +59,12 @@ test('all five counter categories remain distinct, touchable, and clear of the t
     assert.ok(source.x + SOURCE_ITEM_SIZE / 2 <= CAFE_LAYOUT.width);
     assert.ok(source.y - SOURCE_ITEM_SIZE / 2 >= 0);
     assert.ok(source.y + SOURCE_ITEM_SIZE / 2 <= CAFE_LAYOUT.height);
-    assert.ok(source.x + SOURCE_ITEM_SIZE / 2 < tray.left || source.y + SOURCE_ITEM_SIZE / 2 < tray.top);
+    assert.ok(
+      source.x + SOURCE_ITEM_SIZE / 2 < tray.left
+        || source.x - SOURCE_ITEM_SIZE / 2 > tray.right
+        || source.y + SOURCE_ITEM_SIZE / 2 < tray.top
+        || source.y - SOURCE_ITEM_SIZE / 2 > tray.bottom,
+    );
     for (const other of CAFE_LAYOUT.sourceSlots.slice(0, index)) {
       assert.ok(Math.hypot(source.x - other.x, source.y - other.y) >= SOURCE_ITEM_SIZE + 48);
     }

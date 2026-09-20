@@ -2,12 +2,12 @@
 export const CAFE_LAYOUT = {
   width: 1000,
   height: 600,
-  prepTray: { x: 830, y: 493, w: 300, h: 130 },
+  prepTray: { x: 825, y: 355, w: 260, h: 120 },
   carryTray: { x: 485, y: 437, w: 420, h: 260 },
   serveTray: { x: 240, y: 385, w: 416, h: 272 },
   sourceSlots: [
-    { x: 220, y: 350 }, { x: 400, y: 350 }, { x: 580, y: 350 },
-    { x: 310, y: 475 }, { x: 490, y: 475 },
+    { x: 125, y: 495 }, { x: 295, y: 495 }, { x: 465, y: 495 },
+    { x: 635, y: 495 }, { x: 790, y: 495 },
   ],
   walker: { startX: 500, endX: 700, y: 265 },
   progress: { x: 500, y: 52, width: 510, height: 118, firstSlot: 40 / 629, lastSlot: 584 / 629 },
