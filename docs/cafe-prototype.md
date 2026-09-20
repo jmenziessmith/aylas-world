@@ -35,12 +35,13 @@ Choose **Use phone motion** using the visible button. On iOS the two permission
 requests are started inside that tap, as in Jump Party. Once granted, the game
 remembers that choice for later café rounds and visits on that device. Hold the device approximately flat, tap
 **Ready**, and keep it still during the roughly one-second calibration. Walk
-ten careful steps. The upper Ayla sprite moves with accepted steps; the main
-tray contains independent sliding objects. **Level tray** recalibrates without
-resetting the trip. Permission denial, missing sensors, and absent readings
-lead to the button controls. The app pauses play in portrait and displays the
-existing rotate-device prompt. Backgrounding the app pauses play and requires
-calibration on return.
+ten careful steps. When a tablet provides tilt but no walk events, Ayla starts
+walking slowly after a brief wait; detected steps immediately take over. The
+upper Ayla sprite moves with accepted steps and the main tray contains
+independent sliding objects. Permission denial, missing sensors, and absent
+readings lead to the button controls. The app pauses play in portrait and
+displays the existing rotate-device prompt. Backgrounding the app pauses play
+and requires calibration on return.
 
 Approximate steps use acceleration peaks, a gravity filter when direct linear
 acceleration is unavailable, a refractory period, cadence confidence, and a
@@ -75,12 +76,15 @@ trip; the child does not reload the original complete order.
 
 Clean supplied sprites are extracted into `public/assets/cafe`. Unavailable
 art keys render labelled solid blocks. Selection puts Ayla behind the counter,
-with draggable food in wooden boxes, chalkboard instructions, counter props,
-and an illustrated order paper. Walking uses the supplied sideways walking
-pose and the ten-slot progress strip with gold/green status icons. This small
-journey pose contains decorative painted food; the main tray's live food
-remains independent. Serving uses a larger foreground table, a tray to its
-left, and the order paper to its right, without the animated drag hint.
+with draggable food in wooden boxes, a cake stand, flowers, and an illustrated
+order paper; it has no added chalkboard. Every scene background shares a pinned
+left edge. Walking uses the supplied sideways walking pose and the ten-slot
+progress strip with gold/green status icons. Phone motion permission is
+remembered, and Ayla walks slowly when a tablet provides tilt but no walk
+events. This small journey pose contains decorative painted food; the main
+tray's live food remains independent. Serving uses a larger foreground table,
+a tray to its left, and the order paper to its right, without the animated drag
+hint.
 Home and sound use the same image controls as Mermaid Magic. The serving
 background is pinned to its left edge so the Ayla’s Café sign remains visible;
 the oversized tray and food sit to the left of the large table. A completed
