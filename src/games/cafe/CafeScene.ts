@@ -562,7 +562,6 @@ export class CafeScene extends Phaser.Scene {
       const view = this.art(this.itemKey(item.itemId), SERVE_TRAY.x + (i - (items.length - 1) / 2) * 126, SERVE_TRAY.y, 125);
       this.makeDraggable(view, item.itemId, item.id);
     });
-    this.orderPaper(856, 224, true);
   }
 
   private checkServed(): void {
