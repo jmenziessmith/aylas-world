@@ -1,6 +1,6 @@
 import Phaser from 'phaser';
 import { CAFE_ASSETS } from './assets';
-import { CAFE_ITEMS, CAFE_ORDERS, createRound, addItem, validateLoadedOrder, markSpilled, markServed, beginRecovery, removeLoadedItem, type CafeRound, type CafeItemId } from './model';
+import { CAFE_ITEMS, CAFE_ORDERS, createRound, addItem, itemSelectionCapacity, validateLoadedOrder, markSpilled, markServed, beginRecovery, removeLoadedItem, type CafeRound, type CafeItemId } from './model';
 import { createTrayBody, stepTrayPhysics, type TrayBody } from './physics';
 import { CafeMotionInput } from './sensors';
 import { CAFE_TUNING } from './tuning';
@@ -36,6 +36,9 @@ export class CafeScene extends Phaser.Scene {
   private carryBackground?: Phaser.GameObjects.Image;
   private backgroundLayers: Phaser.GameObjects.Image[] = [];
   private backgroundViewport: { x: number; y: number; width: number; height: number } = { x: 0, y: 0, width: W, height: H };
+  private screenNavigation?: Phaser.GameObjects.Container;
+  private homeButton?: Art;
+  private soundButton?: Art;
   private walker?: Art;
   private steps = 0;
   private lastStep = -1000;
@@ -117,6 +120,7 @@ export class CafeScene extends Phaser.Scene {
     const scale = Math.min((width - 24) / W, (height - 12) / H);
     this.root.setPosition((width - W * scale) / 2, (height - H * scale) / 2).setScale(scale);
     this.layoutBackgrounds();
+    this.layoutNavigation();
     this.cancelDrag();
     if (this.stage === 'CARRYING' && !this.fallback) this.showCalibration();
   }
@@ -164,19 +168,39 @@ export class CafeScene extends Phaser.Scene {
   }
 
   private navigation(): void {
-    const home = this.art('home-button', 48, 48, 80).setInteractive({ useHandCursor: true });
+    this.screenNavigation?.destroy(true);
+    this.screenNavigation = this.add.container(0, 0).setDepth(10);
+    const home = this.art('home-button', 0, 0, 64, 64, 'Home', this.screenNavigation).setInteractive({ useHandCursor: true });
+    this.homeButton = home;
     home.on('pointerdown', () => { window.location.href = import.meta.env.BASE_URL; });
-    const sound = this.art('audio-button', 952, 48, 80).setAlpha(this.muted ? .5 : 1).setInteractive({ useHandCursor: true });
+    const sound = this.art('audio-button', 0, 0, 64, 64, 'Sound', this.screenNavigation).setAlpha(this.muted ? .5 : 1).setInteractive({ useHandCursor: true });
+    this.soundButton = sound;
     sound.on('pointerdown', () => {
       this.muted = !this.muted; sound.setAlpha(this.muted ? .5 : 1);
       if (this.muted) window.speechSynthesis?.cancel();
       else { this.unlockAudio(); this.speak(this.instruction?.text || 'Welcome to Ayla’s Café!'); }
     });
+    this.layoutNavigation();
+  }
+
+  /** Navigation is screen-fixed so it never overlaps artwork when the root is letterboxed. */
+  private layoutNavigation(): void {
+    if (!this.homeButton || !this.soundButton) return;
+    const { width, height } = this.scale.gameSize;
+    const size = Phaser.Math.Clamp(height * .16, 54, 72);
+    const padding = Phaser.Math.Clamp(size * .2, 10, 16);
+    const resizeIcon = (icon: Art, x: number): void => {
+      icon.setPosition(x, padding + size / 2).setSize(size, size);
+      icon.list.forEach(child => {
+        if (child instanceof Phaser.GameObjects.Image) child.setScale(Math.min(size / child.width, size / child.height));
+      });
+    };
+    resizeIcon(this.homeButton, padding + size / 2);
+    resizeIcon(this.soundButton, width - padding - size / 2);
   }
 
   private orderPaper(x: number, y: number, serving = false): void {
     this.art('order-paper', x, y, 286, 300);
-    this.text(x, y - 68, 'Their order', 23, '#76533d');
     this.round.order.lines.forEach((line, i) => {
       const rowY = y - 8 + i * 78;
       this.art(this.itemKey(line.itemId), x - 25, rowY, 64);
@@ -284,14 +308,18 @@ export class CafeScene extends Phaser.Scene {
     const ids = Object.keys(CAFE_ITEMS) as CafeItemId[];
     ids.forEach((id, i) => {
       const slot = CAFE_LAYOUT.sourceSlots[i]; const x = slot.x; const boxKey = i % 2 ? 'storage-box-flower' : 'storage-box-heart';
-      const boxY = slot.y; const sourceY = boxY - 35;
-      const variants = FOOD_VARIANTS[id];
-      this.art(boxKey, x, boxY, 162, 112);
-      this.art(variants[0], x - 32, boxY - 34, 58).setAngle(-12);
-      this.art(variants.at(-1)!, x + 33, boxY - 32, 58).setAngle(10);
-      const view = this.art(this.itemKey(id), x, sourceY, 88, 88, CAFE_ITEMS[id].label).setSize(150, 126);
-      this.sourceViews.set(id, view); this.makeDraggable(view, id);
-      this.boxFront(boxKey, x, boxY, 162, 112);
+      const boxY = slot.y + 18;
+      const selected = this.round.items.filter(item => item.itemId === id).length;
+      const remaining = Math.max(0, itemSelectionCapacity(this.round, id) - selected);
+      const offsets = remaining === 0 ? [] : remaining === 1 ? [0] : remaining === 2 ? [-29, 29] : [-42, 0, 42];
+      if (id !== 'spoon') this.art(boxKey, x, boxY, 162, 112);
+      offsets.forEach((offset, stockIndex) => {
+        const view = this.art(this.itemKey(id), x + offset, id === 'spoon' ? boxY - 4 : boxY - 28 - (stockIndex % 2) * 8, id === 'spoon' ? 68 : 76, id === 'spoon' ? 68 : 82, CAFE_ITEMS[id].label).setSize(74, 86);
+        if (id !== 'spoon') view.setAngle(offset * .1);
+        if (!this.sourceViews.has(id)) this.sourceViews.set(id, view);
+        this.makeDraggable(view, id);
+      });
+      if (id !== 'spoon') this.boxFront(boxKey, x, boxY, 162, 112);
     });
     this.drawTray(PREP_TRAY, 'counter-tray');
     this.loaded().forEach((item, i) => {
@@ -339,7 +367,7 @@ export class CafeScene extends Phaser.Scene {
     this.drag = undefined; const p = this.local(pointer); drag.view.setScale(1);
     if (this.stage === 'SELECTING_ITEMS' || this.stage === 'READY_TO_CARRY') {
       const over = Math.abs(p.x - PREP_TRAY.x) < PREP_TRAY.w / 2 + 25 && Math.abs(p.y - PREP_TRAY.y) < PREP_TRAY.h / 2 + 30;
-      const requested = this.round.order.lines.find(line => line.itemId === drag.itemId)?.count ?? (drag.itemId === 'spoon' ? 1 : 0);
+      const requested = itemSelectionCapacity(this.round, drag.itemId);
       const already = this.round.items.filter(item => item.itemId === drag.itemId && item.status !== 'spilled').length;
       if (over && (drag.instanceId || already < requested)) {
         const item = drag.instanceId ? this.round.items.find(item => item.id === drag.instanceId) : addItem(this.round, drag.itemId);
@@ -523,7 +551,9 @@ export class CafeScene extends Phaser.Scene {
       if (isPlatedTreat) this.art('serving-plate', x, y + 18, 158, 108).setAlpha(served ? 1 : .58);
       const target = isPlatedTreat
         ? this.art(this.itemKey(itemId), x, y - 7, 102, 88)
-        : this.art(this.targetKey(itemId), x, y, 132, 112);
+        : served
+          ? this.art(this.itemKey(itemId), x, y, 110, 108)
+          : this.art(this.targetKey(itemId), x, y, 132, 112);
       target.setAlpha(served ? 1 : .4);
       this.targets.push({ itemId, x, y, served: Boolean(served), view: target });
     });
@@ -533,7 +563,6 @@ export class CafeScene extends Phaser.Scene {
       this.makeDraggable(view, item.itemId, item.id);
     });
     this.orderPaper(856, 224, true);
-    if (complete) this.text(218, 535, 'Thank you!', 30, '#72523d');
   }
 
   private checkServed(): void {

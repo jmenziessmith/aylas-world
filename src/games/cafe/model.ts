@@ -72,16 +72,20 @@ export const CAFE_ORDERS: readonly CafeOrder[] = [
 ];
 
 /** A spoon is an optional extra to balance on the tray, never part of an order. */
-const OPTIONAL_ITEM_LIMITS: Partial<Record<CafeItemId, number>> = { spoon: 1 };
+const OPTIONAL_ITEM_LIMITS: Partial<Record<CafeItemId, number>> = { spoon: 3 };
 
 export function createRound(order: CafeOrder = CAFE_ORDERS[0]): CafeRound {
   return { order, items: [], nextInstanceNumber: 1, recoveryCount: 0 };
 }
 
-export function canAddItem(round: CafeRound, itemId: CafeItemId): boolean {
-  const required = round.order.lines.find((line) => line.itemId === itemId)?.count
+export function itemSelectionCapacity(round: CafeRound, itemId: CafeItemId): number {
+  return round.order.lines.find((line) => line.itemId === itemId)?.count
     ?? OPTIONAL_ITEM_LIMITS[itemId]
     ?? 0;
+}
+
+export function canAddItem(round: CafeRound, itemId: CafeItemId): boolean {
+  const required = itemSelectionCapacity(round, itemId);
   const present = round.items.filter((item) => item.itemId === itemId).length;
   return present < required;
 }

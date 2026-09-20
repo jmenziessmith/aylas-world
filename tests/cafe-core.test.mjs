@@ -47,7 +47,10 @@ test('ice cream can be required while a spoon remains an optional tray extra', (
   const cupcake = addItem(round, 'cupcake');
   const iceCream = addItem(round, 'ice-cream');
   const spoon = addItem(round, 'spoon');
-  assert.ok(cupcake && iceCream && spoon);
+  const secondSpoon = addItem(round, 'spoon');
+  const thirdSpoon = addItem(round, 'spoon');
+  assert.ok(cupcake && iceCream && spoon && secondSpoon && thirdSpoon);
+  assert.equal(addItem(round, 'spoon'), undefined);
   assert.equal(validateLoadedOrder(round), true);
   assert.equal(markServed(round, iceCream.id, 'ice-cream'), true);
   assert.equal(markServed(round, spoon.id, 'spoon'), false);
