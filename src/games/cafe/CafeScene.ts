@@ -220,7 +220,7 @@ export class CafeScene extends Phaser.Scene {
     this.counterForeground();
     this.art('flower-vase', 535, 322, 110, 98);
     this.art('cake-dome', 645, 302, 150, 184);
-    this.orderPaper(870, 229);
+    this.orderPaper(855, 229);
     const ids = Object.keys(CAFE_ITEMS) as CafeItemId[];
     ids.forEach((id, i) => {
       const x = CAFE_LAYOUT.sourceCenters[i]; const boxKey = i % 2 ? 'storage-box-flower' : 'storage-box-heart';
