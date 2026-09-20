@@ -3,9 +3,10 @@ import './style.css';
 import { CrocodileRiverScene } from './games/crocodile-river/scenes/CrocodileRiverScene';
 import { JumpPartyScene } from './games/jump-party/JumpPartyScene';
 import { MermaidGameScene } from './games/mermaid/MermaidGameScene';
+import { CafeScene } from './games/cafe/CafeScene';
 
 const selectedGame = new URLSearchParams(window.location.search).get('game');
-const scene = selectedGame === 'jump-party' ? JumpPartyScene : selectedGame === 'crocodile-river' ? CrocodileRiverScene : selectedGame === 'mermaid' ? MermaidGameScene : undefined;
+const scene = selectedGame === 'cafe' ? CafeScene : selectedGame === 'jump-party' ? JumpPartyScene : selectedGame === 'crocodile-river' ? CrocodileRiverScene : selectedGame === 'mermaid' ? MermaidGameScene : undefined;
 let game: Phaser.Game | undefined;
 const gameHomeButton = document.querySelector<HTMLButtonElement>('#game-home');
 gameHomeButton?.addEventListener('click', () => { window.location.href = import.meta.env.BASE_URL; });

@@ -1,0 +1,15 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
+    "lib": ["ES2022", "DOM"],
+    "strict": true,
+    "skipLibCheck": true,
+    "rootDir": "src/games/cafe",
+    "outDir": ".cafe-test-build",
+    "noEmit": false,
+    "declaration": false
+  },
+  "include": ["src/games/cafe/model.ts", "src/games/cafe/physics.ts", "src/games/cafe/sensors.ts", "src/games/cafe/tuning.ts"]
+}

@@ -42,6 +42,13 @@ Games are selected from the home page. Direct development URLs are:
 
 - `/?game=crocodile-river`
 - `/?game=jump-party`
+- `/?game=cafe`
+
+Ayla’s Café proves choosing an order, carrying a tilting tray for ten steps,
+and serving a customer, including spill recovery. Desktop controls use mouse
+dragging, arrows/WASD, and Space. See [the café prototype guide](docs/cafe-prototype.md)
+for phone controls, tests, and scope, and [the artwork brief](docs/cafe-artwork.md)
+for additional sprites to produce.
 
 Jump Party's object layout is data-driven in `src/games/jump-party/level.ts`. Motion jump sensitivity and cooldown are exposed in `src/games/jump-party/MotionJumpInput.ts`.
 
