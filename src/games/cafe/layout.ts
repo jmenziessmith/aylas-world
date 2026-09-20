@@ -2,15 +2,16 @@
 export const CAFE_LAYOUT = {
   width: 1000,
   height: 600,
-  prepTray: { x: 740, y: 493, w: 300, h: 130 },
+  prepTray: { x: 830, y: 493, w: 300, h: 130 },
   carryTray: { x: 485, y: 437, w: 420, h: 260 },
   serveTray: { x: 240, y: 385, w: 416, h: 272 },
-  sourceCenters: [132, 300, 468],
-  sourceY: 433,
-  walker: { startX: 500, endX: 700, y: 265, backgroundStartX: 0, backgroundEndX: -180 },
+  sourceCenters: [270, 420, 570],
+  sourceY: 413,
+  sourceBoxY: 448,
+  walker: { startX: 500, endX: 700, y: 265 },
   progress: { x: 500, y: 52, width: 510, height: 118, firstSlot: 40 / 629, lastSlot: 584 / 629 },
   table: { x: 618, y: 641, width: 950, height: 673 },
-  customer: { x: 615, y: 172, width: 250, height: 270 },
+  customer: { x: 615, y: 210, width: 250, height: 270 },
   serveTargetRadius: 76,
 } as const;
 
