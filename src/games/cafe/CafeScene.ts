@@ -75,7 +75,7 @@ export class CafeScene extends Phaser.Scene {
   constructor() { super('aylas-cafe'); }
 
   preload(): void {
-    const needed = new Set(['counter-bg', 'carry-bg', 'serve-bg', 'ayla-welcome', 'ayla-carry', 'ayla-cheer', 'customer-bunny', 'customer-elephant', 'customer-monster', 'customer-bunny-happy', 'customer-elephant-happy', 'customer-monster-happy', 'tray', 'table', 'serving-plate', 'hand-left', 'hand-right', 'instruction', 'footprint', 'target-cookie', 'target-drink', 'target-cupcake', 'target-ice-cream', 'target-spoon', 'counter-tray', 'storage-box-heart', 'storage-box-flower', 'speech-bubble-pink', 'status-empty', 'status-complete', 'step-progress-empty', ...Object.values(FOOD_VARIANTS).flat()]);
+    const needed = new Set(['counter-bg', 'carry-bg', 'serve-bg', 'ayla-welcome', 'ayla-empty-tray', 'ayla-carry', 'ayla-cheer', 'customer-bunny', 'customer-elephant', 'customer-monster', 'customer-bunny-happy', 'customer-elephant-happy', 'customer-monster-happy', 'tray', 'table', 'serving-plate', 'instruction', 'footprint', 'target-cookie', 'target-drink', 'target-cupcake', 'target-ice-cream', 'target-spoon', 'counter-tray', 'storage-box-heart', 'storage-box-flower', 'speech-bubble-pink', 'status-empty', 'status-complete', 'step-progress-empty', ...Object.values(FOOD_VARIANTS).flat()]);
     for (const [key, path] of Object.entries(CAFE_ASSETS)) if (needed.has(key)) this.load.image(`cafe-${key}`, `${import.meta.env.BASE_URL}${path.replace(/^\//, '')}`);
     for (const key of ['home-button', 'audio-button']) this.load.image(`cafe-${key}`, `${import.meta.env.BASE_URL}assets/mermaid/sprites/${key}.png`);
   }
@@ -490,10 +490,9 @@ export class CafeScene extends Phaser.Scene {
       this.instruction = this.text(852, 299, this.stage === 'ARRIVING' ? 'We’re here!' : this.fallback ? 'Press Space\nto walk!' : 'Walk carefully!', 22, '#74523e').setWordWrapWidth(191);
     }
     this.carryGroup = this.add.container(CARRY_TRAY.x, CARRY_TRAY.y); this.root.add(this.carryGroup);
-    this.art('tray', 0, 0, CARRY_TRAY.w + 34, CARRY_TRAY.h + 30, 'TRAY', this.carryGroup);
+    // This single pose already includes Ayla's hands holding the green tray.
+    this.art('ayla-empty-tray', 0, -48, 320, 390, 'Ayla', this.carryGroup);
     this.tiltWarning = this.add.rectangle(0, 0, CARRY_TRAY.w, CARRY_TRAY.h).setStrokeStyle(7, 0xf3b266, 0).setFillStyle(0, 0); this.carryGroup.add(this.tiltWarning);
-    this.art('hand-left', -CARRY_TRAY.w / 2 - 22, 52, 84, 160, 'Hand', this.carryGroup);
-    this.art('hand-right', CARRY_TRAY.w / 2 + 22, 52, 84, 160, 'Hand', this.carryGroup);
     const touch = this.add.rectangle(0, 0, CARRY_TRAY.w, CARRY_TRAY.h, 0xffffff, .001).setInteractive(); this.carryGroup.add(touch);
     touch.on('pointerdown', (pointer: Phaser.Input.Pointer) => { if (this.fallback) { this.touchTrayPointer = pointer.id; this.pointerMove(pointer); } });
     this.bodies.filter(body => !body.spilled).forEach(body => {
