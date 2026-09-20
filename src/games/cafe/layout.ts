@@ -6,8 +6,8 @@ export const CAFE_LAYOUT = {
   carryTray: { x: 485, y: 437, w: 420, h: 260 },
   serveTray: { x: 240, y: 385, w: 416, h: 272 },
   sourceSlots: [
-    { x: 125, y: 495 }, { x: 295, y: 495 }, { x: 465, y: 495 },
-    { x: 635, y: 495 }, { x: 790, y: 495 },
+    { x: 170, y: 495 }, { x: 335, y: 495 }, { x: 500, y: 495 },
+    { x: 665, y: 495 }, { x: 830, y: 495 },
   ],
   walker: { startX: 500, endX: 700, y: 265 },
   progress: { x: 500, y: 52, width: 510, height: 118, firstSlot: 40 / 629, lastSlot: 584 / 629 },

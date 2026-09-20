@@ -122,6 +122,10 @@ export class CafeScene extends Phaser.Scene {
     this.layoutBackgrounds();
     this.layoutNavigation();
     this.cancelDrag();
+    if (this.stage === 'SELECTING_ITEMS' || this.stage === 'READY_TO_CARRY') {
+      this.render();
+      return;
+    }
     if (this.stage === 'CARRYING' && !this.fallback) this.showCalibration();
   }
 
@@ -295,13 +299,21 @@ export class CafeScene extends Phaser.Scene {
     this.counterForeground();
     this.selectionOrderBubble();
     const ids = Object.keys(CAFE_ITEMS) as CafeItemId[];
+    const counterY = this.selectionCounterY();
+    const lineCenter = this.backgroundViewport.x + this.backgroundViewport.width / 2;
     ids.forEach((id, i) => {
-      const slot = CAFE_LAYOUT.sourceSlots[i]; const x = slot.x; const boxKey = i % 2 ? 'storage-box-flower' : 'storage-box-heart';
-      const boxY = slot.y + 18;
+      const x = lineCenter + (i - (ids.length - 1) / 2) * 165;
+      const boxKey = i % 2 ? 'storage-box-flower' : 'storage-box-heart';
+      const boxY = counterY;
       const selected = this.round.items.filter(item => item.itemId === id).length;
       const remaining = Math.max(0, itemSelectionCapacity(this.round, id) - selected);
       const offsets = remaining === 0 ? [] : remaining === 1 ? [0] : remaining === 2 ? [-29, 29] : [-42, 0, 42];
       if (id !== 'spoon') this.art(boxKey, x, boxY, 162, 112);
+      if (id !== 'spoon') {
+        FOOD_VARIANTS[id].slice(0, 2).forEach((key, index) => {
+          this.art(key, x + (index ? 35 : -35), boxY - 24 - index * 8, 50).setAngle(index ? 9 : -10);
+        });
+      }
       offsets.forEach((offset, stockIndex) => {
         const view = this.art(this.itemKey(id), x + offset, id === 'spoon' ? boxY - 4 : boxY - 28 - (stockIndex % 2) * 8, id === 'spoon' ? 68 : 76, id === 'spoon' ? 68 : 82, CAFE_ITEMS[id].label).setSize(74, 86);
         if (id !== 'spoon') view.setAngle(offset * .1);
@@ -320,13 +332,18 @@ export class CafeScene extends Phaser.Scene {
     this.selectionHint();
   }
 
+  /** Keeps the crate row on the painted worktop as cover scaling changes with screen height. */
+  private selectionCounterY(): number {
+    const background = this.backgroundLayers[0];
+    return background ? background.y + 560 * background.scaleY : 470;
+  }
+
   /** The monster asks with pictures, so non-readers can build the order too. */
   private selectionOrderBubble(): void {
     this.art('speech-bubble-pink', 700, 132, 320, 170);
     const ordered = this.round.order.lines.flatMap(line => Array.from({ length: line.count }, () => line.itemId));
     const startX = 700 - (ordered.length - 1) * 46;
     ordered.forEach((itemId, index) => this.art(this.itemKey(itemId), startX + index * 92, 132, 68));
-    this.art('customer-monster', 896, 180, 150, 174, 'Friend');
   }
 
   private drawTray(rect: { x: number; y: number; w: number; h: number }, key = 'tray'): void {
