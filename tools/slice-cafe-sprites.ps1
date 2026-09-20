@@ -325,6 +325,7 @@ $carry = "ChatGPT Image Sep 20, 2026, 11_21_58 AM (3).png"
 Save-Crop $carry "trays/carry-tray.png" 35 88 475 347 -ClearTopGuide
 Save-Crop $carry "hands/left.png" 535 88 177 347
 Save-Crop $carry "hands/right.png" 742 88 157 347
+Save-Crop $carry "trays/carry-held.png" 925 88 495 347 -KeepSeparateComponents -ClearTopGuide
 Save-Crop $carry "ui/hold-phone-flat.png" 25 506 337 259
 Save-Crop $carry "ui/status-empty.png" 397 582 163 160
 Save-Crop $carry "ui/status-complete.png" 578 582 163 160

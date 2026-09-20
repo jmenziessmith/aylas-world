@@ -62,7 +62,6 @@ export class CafeScene extends Phaser.Scene {
   private alive = true;
   private motionGranted = false;
   private carryOnboardingComplete = false;
-  private showCarryInstruction = false;
   private customerStartIndex = 0;
   private itemVariants: Record<CafeItemId, string> = {
     cookie: FOOD_VARIANTS.cookie[0], juice: FOOD_VARIANTS.juice[0], cupcake: FOOD_VARIANTS.cupcake[0],
@@ -75,7 +74,7 @@ export class CafeScene extends Phaser.Scene {
   constructor() { super('aylas-cafe'); }
 
   preload(): void {
-    const needed = new Set(['counter-bg', 'carry-bg', 'serve-bg', 'ayla-welcome', 'ayla-empty-tray', 'ayla-carry', 'ayla-cheer', 'customer-bunny', 'customer-elephant', 'customer-monster', 'customer-bunny-happy', 'customer-elephant-happy', 'customer-monster-happy', 'tray', 'table', 'serving-plate', 'instruction', 'footprint', 'target-cookie', 'target-drink', 'target-cupcake', 'target-ice-cream', 'target-spoon', 'counter-tray', 'storage-box-heart', 'storage-box-flower', 'speech-bubble-pink', 'status-empty', 'status-complete', 'step-progress-empty', ...Object.values(FOOD_VARIANTS).flat()]);
+    const needed = new Set(['counter-bg', 'carry-bg', 'serve-bg', 'ayla-welcome', 'ayla-carry', 'ayla-cheer', 'customer-bunny', 'customer-elephant', 'customer-monster', 'customer-bunny-happy', 'customer-elephant-happy', 'customer-monster-happy', 'tray', 'tray-held', 'table', 'serving-plate', 'instruction', 'footprint', 'target-cookie', 'target-drink', 'target-cupcake', 'target-ice-cream', 'target-spoon', 'counter-tray', 'storage-box-heart', 'storage-box-flower', 'speech-bubble-pink', 'status-empty', 'status-complete', 'step-progress-empty', ...Object.values(FOOD_VARIANTS).flat()]);
     for (const [key, path] of Object.entries(CAFE_ASSETS)) if (needed.has(key)) this.load.image(`cafe-${key}`, `${import.meta.env.BASE_URL}${path.replace(/^\//, '')}`);
     for (const key of ['home-button', 'audio-button']) this.load.image(`cafe-${key}`, `${import.meta.env.BASE_URL}assets/mermaid/sprites/${key}.png`);
   }
@@ -481,7 +480,6 @@ export class CafeScene extends Phaser.Scene {
         return createTrayBody(item.id, item.itemId, pos ? .5 + (pos.x - PREP_TRAY.x) / PREP_TRAY.w : .5 + (i - (items.length - 1) / 2) * .22, pos ? .5 + (pos.y - PREP_TRAY.y) / PREP_TRAY.h : .5);
       });
     }
-    this.showCarryInstruction = !this.carryOnboardingComplete;
     this.carryOnboardingComplete = true;
     this.stage = 'CARRYING'; this.lastStep = this.time.now; this.lastDetectedStep = this.time.now; this.autoWalkActive = false;
     this.render(); this.speak('Walk carefully. Ten steps to your friend!');
@@ -502,13 +500,10 @@ export class CafeScene extends Phaser.Scene {
       const done = this.art('status-complete', position.x, position.y, 39).setVisible(i < this.steps);
       this.stepDots.push(done);
     }
-    if (this.showCarryInstruction) {
-      this.art('speech-bubble-pink', 852, 307, 251, 132);
-      this.instruction = this.text(852, 299, this.stage === 'ARRIVING' ? 'We’re here!' : this.fallback ? 'Press Space\nto walk!' : 'Walk carefully!', 22, '#74523e').setWordWrapWidth(191);
-    }
+    if (!this.fallback) this.art('instruction', 116, 492, 180, 138, 'Hold phone flat');
     this.carryGroup = this.add.container(CARRY_TRAY.x, CARRY_TRAY.y); this.root.add(this.carryGroup);
-    // This single pose already includes Ayla's hands holding the green tray.
-    this.art('ayla-empty-tray', 0, -48, 320, 390, 'Ayla', this.carryGroup);
+    // The supplied top-right sprite already combines the hands and green tray.
+    this.art('tray-held', 0, 0, CARRY_TRAY.w + 34, CARRY_TRAY.h + 30, 'TRAY', this.carryGroup);
     this.tiltWarning = this.add.rectangle(0, 0, CARRY_TRAY.w, CARRY_TRAY.h).setStrokeStyle(7, 0xf3b266, 0).setFillStyle(0, 0); this.carryGroup.add(this.tiltWarning);
     const touch = this.add.rectangle(0, 0, CARRY_TRAY.w, CARRY_TRAY.h, 0xffffff, .001).setInteractive(); this.carryGroup.add(touch);
     touch.on('pointerdown', (pointer: Phaser.Input.Pointer) => { if (this.fallback) { this.touchTrayPointer = pointer.id; this.pointerMove(pointer); } });

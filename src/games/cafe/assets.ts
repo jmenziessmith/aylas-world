@@ -22,6 +22,7 @@ export const CAFE_ASSETS = {
   "customer-monster-happy": `${ROOT}/customers/purple-monster-happy.png`,
 
   tray: `${ROOT}/trays/carry-tray.png`,
+  "tray-held": `${ROOT}/trays/carry-held.png`,
   table: `${ROOT}/table/wooden-table.png`,
   "serving-plate": `${ROOT}/table/serving-plate.png`,
   napkin: `${ROOT}/table/napkin.png`,
