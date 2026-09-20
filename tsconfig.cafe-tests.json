@@ -11,5 +11,5 @@
     "noEmit": false,
     "declaration": false
   },
-  "include": ["src/games/cafe/model.ts", "src/games/cafe/physics.ts", "src/games/cafe/sensors.ts", "src/games/cafe/tuning.ts"]
+  "include": ["src/games/cafe/model.ts", "src/games/cafe/physics.ts", "src/games/cafe/sensors.ts", "src/games/cafe/tuning.ts", "src/games/cafe/layout.ts"]
 }

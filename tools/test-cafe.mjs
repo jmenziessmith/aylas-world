@@ -18,7 +18,7 @@ const compiled = spawnSync(npmCommand, ['exec', '--', 'tsc', '-p', 'tsconfig.caf
 if (compiled.error) throw compiled.error;
 if (compiled.status !== 0) process.exit(compiled.status ?? 1);
 
-const tested = spawnSync(process.execPath, ['--test', 'tests/cafe-core.test.mjs', 'tests/cafe-flow.test.mjs'], {
+const tested = spawnSync(process.execPath, ['--test', 'tests/cafe-core.test.mjs', 'tests/cafe-flow.test.mjs', 'tests/cafe-layout.test.mjs'], {
   cwd: workspace,
   encoding: 'utf8',
   stdio: 'inherit',

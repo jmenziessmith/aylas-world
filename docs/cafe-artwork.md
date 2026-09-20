@@ -10,21 +10,27 @@ canvas around each sprite, and removes residual neon-green guide components.
 ## Used artwork
 
 - Counter, carry, and serving backgrounds are exact 2172 x 724 source images.
-- Ayla has welcome, pointing, empty-tray, spill, cheer, and thumbs-up poses. A
-  loaded walking pose was extracted for reference but is not used in play
-  because its fixed food would contradict the live order.
+- Ayla has welcome, pointing, empty-tray, loaded walking, spill, cheer, and
+  thumbs-up poses. The sideways walking pose is used for the journey, as
+  requested in the visual brief.
 - Bunny, elephant, and purple monster each have a waiting and happy/eating pose
   without a table baked into the image.
 - Twelve food objects are independent sprites: three cupcakes, three drinks,
   two cookies, three ice creams, and a spoon.
 - The empty tray, left and right hands, phone instruction, table, serving
   targets, plate, napkin, vase, footprint, star, and heart are independent.
+- Counter dressing is available as a pink counter tray, two wooden storage
+  boxes, cake dome, utensil pot, standing and hanging chalkboards, a rope-free
+  landscape chalkboard panel, order paper, and pink speech bubble.
+- Carry status art includes matching empty and completed circles plus a clean
+  ten-hole progress strip. The game draws live progress over these assets.
 
 The current proof uses the chocolate-chip cookie, orange drink, and heart
 cupcake, plus the waiting/happy states for bunny, elephant, and purple monster.
 The remaining extracted variants are available through the typed manifest for
-later rounds. `ayla-carry` deliberately maps to the empty-tray pose; the fixed
-loaded walking image remains an extracted reference and is not loaded by play.
+later rounds. The carry journey uses the supplied walking Ayla pose with its
+baked cupcake and orange drink as requested for the visual prototype; the live
+physics tray still renders its order items independently.
 
 The five 1672 x 941 images without green guides are composition mockups. They
 contain baked UI, text, trays, food, customers, and tables, so the game does not
@@ -33,6 +39,9 @@ table and is excluded. The 11:20:50 serving background (3) has a permanent
 foreground table and is excluded in favour of the clean serving background.
 
 ## Artwork still needed
+
+The supplied art covers the current three-scene redesign. These are optional
+production improvements and assets for future content, not blockers:
 
 Produce these as transparent PNGs in the same soft 3D storybook style. Put one
 sprite per non-overlapping 1 px solid green rectangle, with at least 24 px of
@@ -45,16 +54,17 @@ text, shadows from unseen scenery, UI, food, tables, or trays unless requested.
    can cover it. Waiting pose has open eyes and hands together. Happy pose has
    closed smiling eyes and raised hands. Match the scale and camera angle of the
    bunny/elephant/purple customer bust sheet.
-2. **Ayla walking with an empty tray.** Faithful pink Ayla design: brown eyes,
+2. **Ayla walking with an empty tray (future order variants).** Faithful pink Ayla design: brown eyes,
    dark curved horns, pointed ears, pink nose, small fangs, pink tuft, purple
    polka-dot headband, cream apron and colourful shoes. Three-quarter view,
    one foot raised in a clear walking pose. The tray must be empty; no food may
    overlap Ayla or the tray. This replaces the current proof sprite, which has a
    cupcake and orange drink permanently painted onto it.
-3. **Empty and filled single footprint pair.** Two separate transparent sprites
+3. **Optional empty and filled single footprint pair.** Two separate transparent sprites
    with identical bounds, 128 x 128 preferred. Use the existing rounded paw
    shape: empty is cream/grey, filled is warm yellow. No number or surrounding
-   progress bar. Ten instances will be rendered by the game.
+   progress bar. These could replace the existing gold-circle/green-tick status
+   icons if a footprint-based progress style is wanted later.
 4. **Serving targets with matching bounds.** Five separate 192 x 192 sprites
    for cupcake, drink, cookie, spoon, and ice cream. Use a pale cream fill,
    coloured dashed edge, and a centred flat silhouette. The supplied target
@@ -63,7 +73,7 @@ text, shadows from unseen scenery, UI, food, tables, or trays unless requested.
    extended as if placing a plate. Do not include a table, plate, food, or tray.
    The supplied pose has a wooden table and cupcake permanently merged into it.
 
-The source art includes no clean crocodile customer and no generic walking Ayla.
-The prototype moves the empty-tray Ayla pose during the journey and may show a
-solid placeholder for the crocodile. Green-bordered source sheets should remain
+The source art includes no clean crocodile customer and no generic empty-tray
+walking Ayla. The prototype uses the supplied loaded walking pose; the crocodile
+is not yet enabled. Missing art keys render a solid placeholder. Green-bordered source sheets should remain
 available as production inputs and should never be loaded directly by the game.

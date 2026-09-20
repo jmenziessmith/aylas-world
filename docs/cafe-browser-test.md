@@ -8,13 +8,15 @@ Tested on 20 September 2026 against the local Vite app at
 - `corepack pnpm build` — passed. TypeScript and the Vite production build
   completed successfully. Vite reported only its existing large-chunk warning.
 - `corepack pnpm exec tsc -p tsconfig.cafe-tests.json --noEmit` — passed.
-- `npm test` — 15/15 tests passed. Coverage includes exact order
+- `npm test` — 21/21 tests passed. Coverage includes exact order
   matching, wrong serving-target rejection, spill recovery, tray movement and
   edge spilling, body separation, orientation mapping, calibration, careful
   step filtering, a full ten-step carry, repeated-item and all-item recovery,
-  neutral velocity damping, and null-only sensor acceleration fallback.
-- Asset manifest verification — all 49 declared cafe asset paths exist under
-  `public/assets/cafe`.
+  neutral velocity damping, null-only sensor acceleration fallback, stale
+  orientation recovery, matching orientation/gravity tilt units, and layout
+  geometry at five landscape phone/tablet sizes.
+- Asset manifest verification — declared cafe asset paths are checked against
+  `public/assets/cafe`; shared home/sound artwork uses Mermaid's existing files.
 - `GET /?game=cafe` — returned HTTP 200 from the local Vite server.
 
 ## Browser interaction status
@@ -31,7 +33,7 @@ The following checks remain for a supported in-app browser session:
 - Drag the requested cookie and juice from the counter onto the tray.
 - Drop a cupcake distractor on the tray and verify that it returns to the
   counter without advancing the order.
-- Remove and reposition a loaded item, then complete the exact order.
+- Reposition a loaded item, then complete the exact order.
 - Choose **Play with buttons**, calibrate, alternate Space presses at least
   300 ms apart, and verify ten progress steps reach the serving phase.
 - Hold each arrow/WASD direction and verify that tray items move in the matching

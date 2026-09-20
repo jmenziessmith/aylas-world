@@ -3,6 +3,7 @@ export const CAFE_TUNING = {
   gravity: 9.81,
   gravityFilter: 0.86,
   motionSampleTimeoutMs: 2_000,
+  orientationSampleFreshMs: 250,
   tiltDeadZone: 0.035,
   maxTiltDegrees: 32,
   trayAcceleration: 0.62,

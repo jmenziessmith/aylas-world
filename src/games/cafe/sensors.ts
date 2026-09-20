@@ -158,7 +158,7 @@ export class CafeMotionInput {
   private currentTilt: TrayTilt = { x: 0, y: 0 };
   private desktopTilt: TrayTilt | undefined;
   private readonly gravityFilter = new GravitySampleFilter();
-  private orientationAvailable = false;
+  private lastOrientationSampleAt?: number;
   private tiltSequence = 0;
   private sampledTiltSequence = 0;
   private lastMotionSampleAt?: number;
@@ -215,8 +215,10 @@ export class CafeMotionInput {
 
   startCalibration(now = performance.now()): void {
     this.desktopTilt = undefined;
+    this.currentTilt = { x: 0, y: 0 };
     this.calibrator.start(now);
     this.detector.reset();
+    this.gravityFilter.reset();
     this.sampledTiltSequence = this.tiltSequence;
   }
 
@@ -258,15 +260,16 @@ export class CafeMotionInput {
   }
 
   private readonly handleOrientation = (event: DeviceOrientationEvent): void => {
-    if (event.beta === null || event.gamma === null) return;
-    this.orientationAvailable = true;
+    if (!Number.isFinite(event.beta) || !Number.isFinite(event.gamma)) return;
+    const now = performance.now();
+    this.lastOrientationSampleAt = now;
     const mapped = mapTiltToScreen(
-      event.gamma / CAFE_TUNING.maxTiltDegrees,
-      event.beta / CAFE_TUNING.maxTiltDegrees,
+      (event.gamma as number) / CAFE_TUNING.maxTiltDegrees,
+      (event.beta as number) / CAFE_TUNING.maxTiltDegrees,
       screenAngle(),
     );
     this.rawTilt = mapped;
-    this.lastTiltSampleAt = performance.now();
+    this.lastTiltSampleAt = now;
     this.tiltSequence += 1;
   };
 
@@ -279,12 +282,10 @@ export class CafeMotionInput {
       const now = performance.now();
       this.lastMotionSampleAt = now;
       this.lastTiltSampleAt = now;
-      if (!this.orientationAvailable) {
-        this.rawTilt = mapTiltToScreen(
-          filtered.gravity.x / CAFE_TUNING.gravity,
-          -filtered.gravity.y / CAFE_TUNING.gravity,
-          screenAngle(),
-        );
+      const orientationIsFresh = this.lastOrientationSampleAt !== undefined
+        && now - this.lastOrientationSampleAt <= CAFE_TUNING.orientationSampleFreshMs;
+      if (!orientationIsFresh) {
+        this.rawTilt = gravityTilt(filtered.gravity, screenAngle());
         this.tiltSequence += 1;
       }
       if (direct) this.detectStep(direct.x ?? 0, direct.y ?? 0, direct.z ?? 0, event, now);
@@ -301,9 +302,9 @@ export class CafeMotionInput {
   private detectStep(x: number, y: number, z: number, event: DeviceMotionEvent, now: number): void {
     const acceleration = Math.hypot(x, y, z);
     const rotation = event.rotationRate;
-    const rotationRate = rotation
-      ? Math.max(Math.abs(rotation.alpha ?? 0), Math.abs(rotation.beta ?? 0), Math.abs(rotation.gamma ?? 0))
-      : 0;
+    const rotationValues = rotation ? [rotation.alpha, rotation.beta, rotation.gamma]
+      .filter((value): value is number => typeof value === 'number' && Number.isFinite(value)) : [];
+    const rotationRate = rotationValues.length > 0 ? Math.max(...rotationValues.map(Math.abs)) : 0;
     const step = this.detector.sample(acceleration, rotationRate, now);
     if (step) this.callbacks.onStep?.(step);
   }
@@ -312,6 +313,19 @@ export class CafeMotionInput {
 function screenAngle(): number {
   const legacy = window as Window & { orientation?: number };
   return window.screen.orientation?.angle ?? legacy.orientation ?? 0;
+}
+
+/** Converts gravity to the same degrees/max-angle scale as DeviceOrientation. */
+function gravityTilt(gravity: Vector3, angleDegrees: number): TrayTilt {
+  const radiansToDegrees = 180 / Math.PI;
+  // abs(z) keeps the neutral direction stable whether the device is face-up or face-down.
+  const gamma = Math.atan2(gravity.x, Math.hypot(gravity.y, gravity.z)) * radiansToDegrees;
+  const beta = Math.atan2(-gravity.y, Math.abs(gravity.z)) * radiansToDegrees;
+  return mapTiltToScreen(
+    gamma / CAFE_TUNING.maxTiltDegrees,
+    beta / CAFE_TUNING.maxTiltDegrees,
+    angleDegrees,
+  );
 }
 
 function finiteVector(vector: DeviceMotionEventAcceleration | null): Vector3 | undefined {

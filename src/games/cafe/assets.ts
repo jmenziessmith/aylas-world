@@ -9,9 +9,7 @@ export const CAFE_ASSETS = {
   "ayla-welcome": `${ROOT}/characters/ayla-welcome.png`,
   "ayla-point": `${ROOT}/characters/ayla-point.png`,
   "ayla-empty-tray": `${ROOT}/characters/ayla-empty-tray.png`,
-  // The supplied walking pose has food baked in, so the prototype moves the
-  // neutral empty-tray pose and renders the actual order independently.
-  "ayla-carry": `${ROOT}/characters/ayla-empty-tray.png`,
+  "ayla-carry": `${ROOT}/characters/ayla-carry.png`,
   "ayla-spill": `${ROOT}/characters/ayla-spill.png`,
   "ayla-cheer": `${ROOT}/characters/ayla-cheer.png`,
   "ayla-thumbs-up": `${ROOT}/characters/ayla-thumbs-up.png`,
@@ -36,6 +34,19 @@ export const CAFE_ASSETS = {
   "success-star": `${ROOT}/ui/success-star.png`,
   "celebration-heart": `${ROOT}/ui/celebration-heart.png`,
   "speech-bubble": `${ROOT}/ui/speech-bubble.png`,
+  "speech-bubble-pink": `${ROOT}/ui/speech-bubble-pink.png`,
+  "status-empty": `${ROOT}/ui/status-empty.png`,
+  "status-complete": `${ROOT}/ui/status-complete.png`,
+
+  "counter-tray": `${ROOT}/counter/counter-tray.png`,
+  "storage-box-heart": `${ROOT}/counter/storage-box-heart.png`,
+  "storage-box-flower": `${ROOT}/counter/storage-box-flower.png`,
+  "cake-dome": `${ROOT}/counter/cake-dome.png`,
+  "utensil-pot": `${ROOT}/counter/utensil-pot.png`,
+  "chalkboard-standing": `${ROOT}/counter/chalkboard-standing.png`,
+  "chalkboard-hanging": `${ROOT}/counter/chalkboard-hanging.png`,
+  "chalkboard-panel": `${ROOT}/counter/chalkboard-panel.png`,
+  "order-paper": `${ROOT}/counter/order-paper.png`,
 
   "target-cupcake": `${ROOT}/targets/cupcake.png`,
   "target-drink": `${ROOT}/targets/drink.png`,

@@ -217,3 +217,86 @@ test('null-only direct acceleration falls back to filtered gravity and invalid e
     globalThis.window = previousWindow;
   }
 });
+
+test('stale orientation hands tilt calibration back to motion gravity', async () => {
+  const listeners = new Map();
+  let now = 0;
+  const fakeWindow = {
+    isSecureContext: true,
+    DeviceMotionEvent: class {},
+    DeviceOrientationEvent: class {},
+    screen: { orientation: { angle: 0 } },
+    addEventListener(type, listener) { listeners.set(type, listener); },
+    removeEventListener(type, listener) { if (listeners.get(type) === listener) listeners.delete(type); },
+  };
+  const previousWindow = globalThis.window;
+  const performanceDescriptor = Object.getOwnPropertyDescriptor(globalThis, 'performance');
+  globalThis.window = fakeWindow;
+  Object.defineProperty(globalThis, 'performance', { configurable: true, value: { now: () => now } });
+  try {
+    const input = new CafeMotionInput();
+    assert.equal(await input.enable(), 'enabled');
+    const orientation = listeners.get('deviceorientation');
+    const motion = listeners.get('devicemotion');
+    orientation({ beta: Number.NaN, gamma: 0 });
+    assert.equal(input.hasTiltSamples, false);
+    orientation({ beta: 0, gamma: 0 });
+    input.startCalibration(0);
+
+    const gravity = { x: 2, y: 0, z: 9.6 };
+    now = 300; motion({ acceleration: null, accelerationIncludingGravity: gravity, rotationRate: null }); input.update(now);
+    now = 600; motion({ acceleration: null, accelerationIncludingGravity: gravity, rotationRate: null }); input.update(now);
+    now = 900; motion({ acceleration: null, accelerationIncludingGravity: gravity, rotationRate: null }); input.update(now);
+    assert.equal(input.ready, true);
+    input.destroy();
+  } finally {
+    globalThis.window = previousWindow;
+    if (performanceDescriptor) Object.defineProperty(globalThis, 'performance', performanceDescriptor);
+  }
+});
+
+test('stale orientation switches to matching gravity angles without a false tilt', async () => {
+  const listeners = new Map();
+  let now = 0;
+  const fakeWindow = {
+    isSecureContext: true,
+    DeviceMotionEvent: class {},
+    DeviceOrientationEvent: class {},
+    screen: { orientation: { angle: 0 } },
+    addEventListener(type, listener) { listeners.set(type, listener); },
+    removeEventListener(type, listener) { if (listeners.get(type) === listener) listeners.delete(type); },
+  };
+  const previousWindow = globalThis.window;
+  const performanceDescriptor = Object.getOwnPropertyDescriptor(globalThis, 'performance');
+  globalThis.window = fakeWindow;
+  Object.defineProperty(globalThis, 'performance', { configurable: true, value: { now: () => now } });
+  try {
+    const input = new CafeMotionInput();
+    assert.equal(await input.enable(), 'enabled');
+    const orientation = listeners.get('deviceorientation');
+    const motion = listeners.get('devicemotion');
+    input.startCalibration(0);
+    for (const time of [0, 450, 850]) {
+      now = time;
+      orientation({ beta: 0, gamma: 30 });
+      input.update(now);
+    }
+    assert.equal(input.ready, true);
+    assert.deepEqual(input.tilt, { x: 0, y: 0 });
+
+    now = 1_101;
+    const radians = 30 * Math.PI / 180;
+    motion({
+      acceleration: { x: 0, y: 0, z: 0 },
+      accelerationIncludingGravity: { x: 9.81 * Math.sin(radians), y: 0, z: 9.81 * Math.cos(radians) },
+      rotationRate: null,
+    });
+    const tilt = input.update(now);
+    assert.ok(Math.abs(tilt.x) < 0.01, `unexpected fallback jump: ${tilt.x}`);
+    assert.ok(Math.abs(tilt.y) < 0.01, `unexpected fallback jump: ${tilt.y}`);
+    input.destroy();
+  } finally {
+    globalThis.window = previousWindow;
+    if (performanceDescriptor) Object.defineProperty(globalThis, 'performance', performanceDescriptor);
+  }
+});

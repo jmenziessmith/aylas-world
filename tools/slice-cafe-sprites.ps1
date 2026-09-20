@@ -126,7 +126,8 @@ function Save-Crop {
         [int]$Width,
         [int]$Height,
         [switch]$KeepSeparateComponents,
-        [switch]$ClearBottomGuide
+        [switch]$ClearBottomGuide,
+        [switch]$ClearTopGuide
     )
 
     $mappedRect = [pscustomobject]@{ Name = $RelativeOutput; X = $X; Y = $Y; Right = $X + $Width; Bottom = $Y + $Height }
@@ -217,6 +218,20 @@ function Save-Crop {
                 }
             }
 
+            # The tray's generated top guide is connected to its green rim by a
+            # few antialiased pixels. It occupies rows 3-5; row 6 provides a
+            # clean separation before the painted rim resumes at row 9.
+            if ($ClearTopGuide) {
+                for ($py = 0; $py -le [Math]::Min(5, $Height - 1); $py++) {
+                    for ($px = 0; $px -lt $Width; $px++) {
+                        $pixel = $outputImage.GetPixel($px, $py)
+                        if ($pixel.A -gt 20 -and $pixel.G -gt 120 -and $pixel.G -gt ($pixel.R * 1.1) -and $pixel.G -gt ($pixel.B * 1.06)) {
+                            $outputImage.SetPixel($px, $py, [System.Drawing.Color]::Transparent)
+                        }
+                    }
+                }
+            }
+
             $outputImage.Save($outputPath, [System.Drawing.Imaging.ImageFormat]::Png)
             Write-Host "$RelativeOutput ($Width x $Height)"
         }
@@ -242,6 +257,39 @@ function Copy-Background {
     }
     finally { $image.Dispose() }
     Copy-Item -LiteralPath $sourcePath -Destination $outputPath -Force
+}
+
+function Save-DerivedCrop {
+    param(
+        [string]$RelativeSource,
+        [string]$RelativeOutput,
+        [int]$X,
+        [int]$Y,
+        [int]$Width,
+        [int]$Height
+    )
+    $sourcePath = Join-Path $OutputDir $RelativeSource
+    $outputPath = Join-Path $OutputDir $RelativeOutput
+    New-Item -ItemType Directory -Force -Path (Split-Path -Parent $outputPath) | Out-Null
+    $inputImage = [System.Drawing.Bitmap]::FromFile($sourcePath)
+    try {
+        if ($X -lt 0 -or $Y -lt 0 -or ($X + $Width) -gt $inputImage.Width -or ($Y + $Height) -gt $inputImage.Height) {
+            throw "Derived crop $RelativeOutput is outside $RelativeSource."
+        }
+        $outputImage = New-Object System.Drawing.Bitmap $Width, $Height, ([System.Drawing.Imaging.PixelFormat]::Format32bppArgb)
+        try {
+            $graphics = [System.Drawing.Graphics]::FromImage($outputImage)
+            try {
+                $graphics.CompositingMode = [System.Drawing.Drawing2D.CompositingMode]::SourceCopy
+                $graphics.DrawImage($inputImage, [System.Drawing.Rectangle]::new(0, 0, $Width, $Height), [System.Drawing.Rectangle]::new($X, $Y, $Width, $Height), [System.Drawing.GraphicsUnit]::Pixel)
+            }
+            finally { $graphics.Dispose() }
+            $outputImage.Save($outputPath, [System.Drawing.Imaging.ImageFormat]::Png)
+            Write-Host "$RelativeOutput ($Width x $Height, derived)"
+        }
+        finally { $outputImage.Dispose() }
+    }
+    finally { $inputImage.Dispose() }
 }
 
 New-Item -ItemType Directory -Force -Path $OutputDir | Out-Null
@@ -274,12 +322,26 @@ Save-Crop $items "items/ice-cream-mint.png" 858 642 302 266
 Save-Crop $items "items/spoon-blue.png" 1216 642 288 266
 
 $carry = "ChatGPT Image Sep 20, 2026, 11_21_58 AM (3).png"
-Save-Crop $carry "trays/carry-tray.png" 35 88 475 347
+Save-Crop $carry "trays/carry-tray.png" 35 88 475 347 -ClearTopGuide
 Save-Crop $carry "hands/left.png" 535 88 177 347
 Save-Crop $carry "hands/right.png" 742 88 157 347
 Save-Crop $carry "ui/hold-phone-flat.png" 25 506 337 259
-Save-Crop $carry "ui/step-progress-empty.png" 773 582 643 160 -KeepSeparateComponents
+Save-Crop $carry "ui/status-empty.png" 397 582 163 160
+Save-Crop $carry "ui/status-complete.png" 578 582 163 160
+Save-Crop $carry "ui/step-progress-empty.png" 773 582 643 160
 Save-Crop $carry "ui/speech-bubble.png" 27 812 313 239
+
+$counterProps = "ChatGPT Image Sep 20, 2026, 11_21_59 AM (4).png"
+Save-Crop $counterProps "counter/counter-tray.png" 54 86 512 247
+Save-Crop $counterProps "counter/storage-box-heart.png" 608 86 382 247
+Save-Crop $counterProps "counter/storage-box-flower.png" 1022 86 377 247
+Save-Crop $counterProps "counter/cake-dome.png" 48 371 286 348
+Save-Crop $counterProps "counter/utensil-pot.png" 356 371 264 348
+Save-Crop $counterProps "counter/chalkboard-standing.png" 646 371 318 348
+Save-Crop $counterProps "counter/chalkboard-hanging.png" 994 371 405 348
+Save-Crop $counterProps "counter/order-paper.png" 49 762 296 274
+Save-Crop $counterProps "ui/speech-bubble-pink.png" 382 767 513 263
+Save-DerivedCrop "counter/chalkboard-hanging.png" "counter/chalkboard-panel.png" 7 82 377 245
 
 $service = "ChatGPT Image Sep 20, 2026, 11_21_59 AM (5).png"
 Save-Crop $service "table/wooden-table.png" 100 17 640 457

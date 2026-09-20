@@ -6,7 +6,8 @@ app, home navigation, landscape orientation prompt, and resize handling.
 
 ## Playing on desktop
 
-1. Press **Let’s play**. Drag the cookie and orange juice onto the green tray.
+1. Press **Let’s play**. Drag the cookie and orange juice onto the pink counter
+   tray. When the order is correct, the game continues to carry setup.
    The cupcake is a distractor in the first order. Wrong or extra items bounce
    back; loaded items can be rearranged.
 2. Press **Let’s go → Play with buttons → Ready**.
@@ -19,8 +20,9 @@ app, home navigation, landscape orientation prompt, and resize handling.
 6. **Another friend** advances through three starter orders, including two
    cookies plus a drink, and three customers.
 
-Touch fallback also works: drag within the carrying tray to tilt, release to
-level it, and alternate the large L/R step buttons. There is no time limit.
+Touch fallback also works: drag within the carrying tray to tilt and release to
+level it; on desktop Space takes a step. There is no time limit. If every item
+falls, Ayla returns to the counter so the order can be loaded again.
 The sound button toggles speech and small synthesized sound effects.
 
 ## Playing with phone motion
@@ -30,7 +32,8 @@ opening the development computer’s plain HTTP LAN address can use touch
 fallback, but motion permission will be unavailable there.
 
 Choose **Use phone motion** using the visible button. On iOS the two permission
-requests are started inside that tap. Hold the device approximately flat, tap
+requests are started inside that tap, as in Jump Party. Once granted, the game
+remembers that choice for later café rounds and visits on that device. Hold the device approximately flat, tap
 **Ready**, and keep it still during the roughly one-second calibration. Walk
 ten careful steps. The upper Ayla sprite moves with accepted steps; the main
 tray contains independent sliding objects. **Level tray** recalibrates without
@@ -71,8 +74,18 @@ simulation. Replacements are automatically fetched for the short recovery
 trip; the child does not reload the original complete order.
 
 Clean supplied sprites are extracted into `public/assets/cafe`. Unavailable
-art keys render labelled solid blocks. The smaller travelling Ayla uses the
-supplied empty-tray pose so its food never contradicts the live tray.
+art keys render labelled solid blocks. Selection puts Ayla behind the counter,
+with draggable food in wooden boxes, chalkboard instructions, counter props,
+and an illustrated order paper. Walking uses the supplied sideways walking
+pose and the ten-slot progress strip with gold/green status icons. This small
+journey pose contains decorative painted food; the main tray's live food
+remains independent. Serving uses a larger foreground table, a tray to its
+left, and the order paper to its right, without the animated drag hint.
+Home and sound use the same image controls as Mermaid Magic. The serving
+background is pinned to its left edge so the Ayla’s Café sign remains visible;
+the oversized tray and food sit to the left of the large table. A completed
+round advances automatically after ten seconds if the next-round button is not
+pressed.
 `cafe-artwork.md` contains the inventory and precise briefs for additional
 artwork; `cafe-contact-sheet.png` previews all extracted sprites. The source
 sheets and composition mockups are retained under `assets/cafe`.
