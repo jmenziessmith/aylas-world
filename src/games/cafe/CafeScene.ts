@@ -45,6 +45,7 @@ export class CafeScene extends Phaser.Scene {
   private muted = false;
   private alive = true;
   private motionGranted = false;
+  private customerStartIndex = 0;
   private sensorNote = '';
   private tiltWarning?: Phaser.GameObjects.Rectangle;
   private debug?: Phaser.GameObjects.Text;
@@ -61,6 +62,7 @@ export class CafeScene extends Phaser.Scene {
     document.querySelector('#game-loader')?.setAttribute('hidden', '');
     this.root = this.add.container(0, 0);
     this.motion = new CafeMotionInput({ onStep: () => { if (!this.fallback) this.acceptStep(); } });
+    this.customerStartIndex = Phaser.Math.Between(0, 2);
     try { this.motionGranted = localStorage.getItem('aylas-cafe-motion-enabled') === '1'; } catch { /* Motion can still be enabled from its button. */ }
     if (this.motionGranted) this.motion.enablePreviouslyGranted();
     this.keyboard = this.input.keyboard?.createCursorKeys();
@@ -157,7 +159,7 @@ export class CafeScene extends Phaser.Scene {
   /** Reuses the exact background pixels in front of Ayla to put her behind the counter. */
   private counterForeground(): void {
     if (!this.textures.exists('cafe-counter-bg')) return;
-    const image = this.add.image(W / 2, H / 2, 'cafe-counter-bg');
+    const image = this.add.image(0, 0, 'cafe-counter-bg').setOrigin(0, 0);
     image.setScale(Math.max(W / image.width, H / image.height));
     image.setCrop(0, 488, image.width, image.height - 488); this.root.add(image);
   }
@@ -178,8 +180,9 @@ export class CafeScene extends Phaser.Scene {
     // One wide background is decorative; the independently rendered tray/food remain interactive.
     this.cameras.main.setBackgroundColor('#efc9a3');
     if (this.textures.exists(`cafe-${background}`)) {
-      const bg = this.add.image(servingScene ? 0 : W / 2, servingScene ? 0 : H / 2, `cafe-${background}`);
-      bg.setOrigin(servingScene ? 0 : .5, servingScene ? 0 : .5).setScale(Math.max(W / bg.width, H / bg.height)); this.root.add(bg);
+      // Every café scene uses the same left edge, so its landmarks never jump between modes.
+      const bg = this.add.image(0, 0, `cafe-${background}`).setOrigin(0, 0);
+      bg.setScale(Math.max(W / bg.width, H / bg.height)); this.root.add(bg);
     }
     this.instruction = undefined;
     if (['INTRO', 'MOTION_PERMISSION', 'CALIBRATING_TRAY'].includes(this.stage)) {
@@ -209,15 +212,15 @@ export class CafeScene extends Phaser.Scene {
   }
 
   private itemKey(item: CafeItemId): string { return `item-${item}`; }
-  private customerKey(): string { return ['customer-bunny', 'customer-elephant', 'customer-monster'][this.roundIndex % 3]; }
+  private customerKey(): string { return ['customer-bunny', 'customer-elephant', 'customer-monster'][(this.customerStartIndex + this.roundIndex) % 3]; }
   private loaded() { return this.round.items.filter(item => item.status === 'loaded'); }
 
   private renderSelection(): void {
     this.art('ayla-welcome', 500, 301, 334, 386, 'Ayla');
     this.counterForeground();
-    this.orderPaper(837, 229);
-    this.art('cake-dome', 633, 377, 105, 127);
-    this.art('utensil-pot', 945, 402, 90, 119);
+    this.art('flower-vase', 535, 322, 110, 98);
+    this.art('cake-dome', 645, 302, 150, 184);
+    this.orderPaper(870, 229);
     const ids = Object.keys(CAFE_ITEMS) as CafeItemId[];
     ids.forEach((id, i) => {
       const x = CAFE_LAYOUT.sourceCenters[i]; const boxKey = i % 2 ? 'storage-box-flower' : 'storage-box-heart';
@@ -417,7 +420,6 @@ export class CafeScene extends Phaser.Scene {
     const customer = CAFE_LAYOUT.customer; const table = CAFE_LAYOUT.table;
     this.art(complete ? `${this.customerKey()}-happy` : this.customerKey(), customer.x, customer.y, customer.width, customer.height, 'Customer');
     this.art('table', table.x, table.y, table.width, table.height, 'TABLE');
-    this.art('flower-vase', 884, 443, 95, 135);
     const orderItems = this.round.order.lines.flatMap(line => Array.from({ length: line.count }, () => line.itemId));
     const positions = servingPositions(orderItems.length);
     const assigned = new Set<string>();

@@ -10,7 +10,7 @@ export const CAFE_LAYOUT = {
   walker: { startX: 170, endX: 696, y: 195 },
   progress: { x: 500, y: 52, width: 510, height: 118, firstSlot: 40 / 629, lastSlot: 584 / 629 },
   table: { x: 618, y: 641, width: 950, height: 673 },
-  customer: { x: 615, y: 158, width: 250, height: 270 },
+  customer: { x: 615, y: 172, width: 250, height: 270 },
   serveTargetRadius: 76,
 } as const;
 
