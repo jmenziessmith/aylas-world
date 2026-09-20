@@ -181,7 +181,8 @@ export class CafeScene extends Phaser.Scene {
       const rowY = y - 8 + i * 78;
       this.art(this.itemKey(line.itemId), x - 25, rowY, 64);
       const placed = this.round.items.filter(item => item.itemId === line.itemId && (serving ? item.status === 'served' : item.status === 'loaded')).length;
-      this.text(x + 44, rowY, `${placed}/${line.count}`, 25, placed === line.count ? '#477d56' : '#76533d');
+      const quantity = serving ? `${placed}/${line.count}` : `${line.count}`;
+      this.text(x + 44, rowY, quantity, 25, serving && placed === line.count ? '#477d56' : '#76533d');
     });
   }
 
