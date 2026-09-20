@@ -37,11 +37,12 @@ test('orders accept exact items and counts only', () => {
   assert.equal(addItem(round, 'cookie'), undefined);
 });
 
-test('ice cream and spoon orders use their category targets', () => {
+test('ice cream can be required while a spoon remains an optional tray extra', () => {
   assert.ok(CAFE_ITEMS['ice-cream']);
   assert.ok(CAFE_ITEMS.spoon);
-  const order = CAFE_ORDERS.find(({ id }) => id === 'dessert-spoon');
+  const order = CAFE_ORDERS.find(({ id }) => id === 'dessert-pair');
   assert.ok(order);
+  assert.equal(order.lines.some(({ itemId }) => itemId === 'spoon'), false);
   const round = createRound(order);
   const cupcake = addItem(round, 'cupcake');
   const iceCream = addItem(round, 'ice-cream');
@@ -49,7 +50,9 @@ test('ice cream and spoon orders use their category targets', () => {
   assert.ok(cupcake && iceCream && spoon);
   assert.equal(validateLoadedOrder(round), true);
   assert.equal(markServed(round, iceCream.id, 'ice-cream'), true);
-  assert.equal(markServed(round, spoon.id, 'spoon'), true);
+  assert.equal(markServed(round, spoon.id, 'spoon'), false);
+  assert.equal(markServed(round, cupcake.id, 'cupcake'), true);
+  assert.equal(getRoundOutcome(round), 'perfect');
 });
 
 test('serving checks the target and spills can be recovered', () => {

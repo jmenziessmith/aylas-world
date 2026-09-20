@@ -339,7 +339,7 @@ export class CafeScene extends Phaser.Scene {
     this.drag = undefined; const p = this.local(pointer); drag.view.setScale(1);
     if (this.stage === 'SELECTING_ITEMS' || this.stage === 'READY_TO_CARRY') {
       const over = Math.abs(p.x - PREP_TRAY.x) < PREP_TRAY.w / 2 + 25 && Math.abs(p.y - PREP_TRAY.y) < PREP_TRAY.h / 2 + 30;
-      const requested = this.round.order.lines.find(line => line.itemId === drag.itemId)?.count ?? 0;
+      const requested = this.round.order.lines.find(line => line.itemId === drag.itemId)?.count ?? (drag.itemId === 'spoon' ? 1 : 0);
       const already = this.round.items.filter(item => item.itemId === drag.itemId && item.status !== 'spilled').length;
       if (over && (drag.instanceId || already < requested)) {
         const item = drag.instanceId ? this.round.items.find(item => item.id === drag.instanceId) : addItem(this.round, drag.itemId);
@@ -537,8 +537,9 @@ export class CafeScene extends Phaser.Scene {
   }
 
   private checkServed(): void {
-    if (this.loaded().length) return;
-    if (this.round.items.some(item => item.status === 'spilled')) {
+    const required = (item: { itemId: CafeItemId }) => this.round.order.lines.some(line => line.itemId === item.itemId);
+    if (this.loaded().some(required)) return;
+    if (this.round.items.some(item => required(item) && item.status === 'spilled')) {
       this.instruction?.setText('One more little trip!');
       this.button(244, 196, 'Fetch missing →', () => {
         beginRecovery(this.round); this.bodies = []; this.steps = 0; this.nextFoot = 0;

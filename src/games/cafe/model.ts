@@ -68,15 +68,20 @@ export const CAFE_ORDERS: readonly CafeOrder[] = [
   { id: 'cookie-count', lines: [{ itemId: 'cookie', count: 2 }, { itemId: 'juice', count: 1 }], steps: 10 },
   { id: 'cupcake-treat', lines: [{ itemId: 'cupcake', count: 1 }, { itemId: 'juice', count: 1 }], steps: 10 },
   { id: 'cool-treat', lines: [{ itemId: 'ice-cream', count: 1 }, { itemId: 'juice', count: 1 }], steps: 10 },
-  { id: 'dessert-spoon', lines: [{ itemId: 'cupcake', count: 1 }, { itemId: 'ice-cream', count: 1 }, { itemId: 'spoon', count: 1 }], steps: 10 },
+  { id: 'dessert-pair', lines: [{ itemId: 'cupcake', count: 1 }, { itemId: 'ice-cream', count: 1 }], steps: 10 },
 ];
+
+/** A spoon is an optional extra to balance on the tray, never part of an order. */
+const OPTIONAL_ITEM_LIMITS: Partial<Record<CafeItemId, number>> = { spoon: 1 };
 
 export function createRound(order: CafeOrder = CAFE_ORDERS[0]): CafeRound {
   return { order, items: [], nextInstanceNumber: 1, recoveryCount: 0 };
 }
 
 export function canAddItem(round: CafeRound, itemId: CafeItemId): boolean {
-  const required = round.order.lines.find((line) => line.itemId === itemId)?.count ?? 0;
+  const required = round.order.lines.find((line) => line.itemId === itemId)?.count
+    ?? OPTIONAL_ITEM_LIMITS[itemId]
+    ?? 0;
   const present = round.items.filter((item) => item.itemId === itemId).length;
   return present < required;
 }
@@ -102,7 +107,6 @@ export function validateLoadedOrder(round: CafeRound): boolean {
   for (const item of round.items) {
     if (item.status === 'loaded') loaded.set(item.itemId, (loaded.get(item.itemId) ?? 0) + 1);
   }
-  if (loaded.size !== expected.size) return false;
   return [...expected].every(([itemId, count]) => loaded.get(itemId) === count);
 }
 
@@ -115,7 +119,8 @@ export function markSpilled(round: CafeRound, instanceId: string): boolean {
 
 export function markServed(round: CafeRound, instanceId: string, targetItemId: CafeItemId): boolean {
   const item = round.items.find((candidate) => candidate.id === instanceId);
-  if (!item || item.status !== 'loaded' || item.itemId !== targetItemId) return false;
+  const required = round.order.lines.some((line) => line.itemId === targetItemId);
+  if (!item || !required || item.status !== 'loaded' || item.itemId !== targetItemId) return false;
   item.status = 'served';
   return true;
 }
@@ -129,8 +134,10 @@ export function beginRecovery(round: CafeRound): CafeItemInstance[] {
 }
 
 export function getRoundOutcome(round: CafeRound): RoundOutcome {
-  const served = round.items.filter((item) => item.status === 'served').length;
-  const spilled = round.items.filter((item) => item.status === 'spilled').length;
+  const requiredItemIds = new Set(round.order.lines.map((line) => line.itemId));
+  const requiredItems = round.items.filter((item) => requiredItemIds.has(item.itemId));
+  const served = requiredItems.filter((item) => item.status === 'served').length;
+  const spilled = requiredItems.filter((item) => item.status === 'spilled').length;
   const expected = round.order.lines.reduce((sum, line) => sum + line.count, 0);
   if (served + spilled < expected) return 'in-progress';
   if (served === expected) return 'perfect';
