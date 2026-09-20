@@ -26,6 +26,7 @@ export class CafeScene extends Phaser.Scene {
   private positions = new Map<string, { x: number; y: number }>();
   private drag?: Drag;
   private carryGroup?: Phaser.GameObjects.Container;
+  private carryBackground?: Phaser.GameObjects.Image;
   private walker?: Art;
   private steps = 0;
   private lastStep = -1000;
@@ -182,7 +183,7 @@ export class CafeScene extends Phaser.Scene {
   private render(): void {
     this.cancelDrag(); this.tweens.killAll(); this.root.removeAll(true);
     this.bodyViews.clear(); this.sourceViews.clear(); this.targets = []; this.stepDots = []; this.footButtons = [];
-    this.carryGroup = undefined; this.walker = undefined; this.tiltWarning = undefined; this.hint = undefined; this.debug = undefined;
+    this.carryGroup = undefined; this.carryBackground = undefined; this.walker = undefined; this.tiltWarning = undefined; this.hint = undefined; this.debug = undefined;
     const servingScene = this.stage === 'SERVING' || this.stage === 'ROUND_COMPLETE';
     const background = servingScene ? 'serve-bg' : ['CARRYING', 'CALIBRATING_TRAY', 'ARRIVING'].includes(this.stage) ? 'carry-bg' : 'counter-bg';
     // One wide background is decorative; the independently rendered tray/food remain interactive.
@@ -191,6 +192,7 @@ export class CafeScene extends Phaser.Scene {
       // Every café scene uses the same left edge, so its landmarks never jump between modes.
       const bg = this.add.image(0, 0, `cafe-${background}`).setOrigin(0, 0);
       bg.setScale(Math.max(W / bg.width, H / bg.height)); this.root.add(bg);
+      if (background === 'carry-bg') this.carryBackground = bg;
     }
     this.instruction = undefined;
     if (['INTRO', 'MOTION_PERMISSION', 'CALIBRATING_TRAY'].includes(this.stage)) {
@@ -383,10 +385,12 @@ export class CafeScene extends Phaser.Scene {
 
   private renderCarry(): void {
     // The journey and progress strip sit directly on the café artwork, without a UI box.
+    const journey = CAFE_LAYOUT.walker;
+    const journeyProgress = this.steps / this.round.order.steps;
+    this.carryBackground?.setX(Phaser.Math.Linear(journey.backgroundStartX, journey.backgroundEndX, journeyProgress));
     this.art(this.customerKey(), 831, 130, 90, 104, 'Friend');
     this.art('table', 828, 220, 170, 104, 'Table');
-    const journey = CAFE_LAYOUT.walker;
-    this.walker = this.art('ayla-carry', journey.startX + this.steps / this.round.order.steps * (journey.endX - journey.startX), journey.y, 180, 170, 'Ayla');
+    this.walker = this.art('ayla-carry', journey.startX + journeyProgress * (journey.endX - journey.startX), journey.y, 180, 170, 'Ayla');
     const bar = CAFE_LAYOUT.progress;
     this.art('step-progress-empty', bar.x, bar.y, bar.width, bar.height);
     for (let i = 0; i < this.round.order.steps; i++) {
@@ -423,7 +427,9 @@ export class CafeScene extends Phaser.Scene {
     this.lastStep = this.time.now; this.steps++; this.nextFoot = 1 - this.nextFoot; this.refreshFeet();
     this.stepDots.forEach((dot, i) => dot.setVisible(i < this.steps));
     const journey = CAFE_LAYOUT.walker;
-    if (this.walker) this.tweens.add({ targets: this.walker, x: journey.startX + this.steps / this.round.order.steps * (journey.endX - journey.startX), duration: 210 });
+    const journeyProgress = this.steps / this.round.order.steps;
+    if (this.walker) this.tweens.add({ targets: this.walker, x: journey.startX + journeyProgress * (journey.endX - journey.startX), duration: 280, ease: 'Sine.Out' });
+    if (this.carryBackground) this.tweens.add({ targets: this.carryBackground, x: Phaser.Math.Linear(journey.backgroundStartX, journey.backgroundEndX, journeyProgress), duration: 280, ease: 'Sine.Out' });
     for (const body of this.bodies) if (!body.spilled) { body.vx += (this.steps % 2 ? .012 : -.012); body.vy += .009; }
     if (this.steps % 2 === 0) this.chime(380, .025);
     if (this.steps >= this.round.order.steps) {
